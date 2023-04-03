@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: flask
-        image: liviubanica/28032023_licenta_flask_postgres:1
+        image: liviubanica/03042023_licenta_flask_postgres:3
         imagePullPolicy: Always
         ports:
           - name: http
