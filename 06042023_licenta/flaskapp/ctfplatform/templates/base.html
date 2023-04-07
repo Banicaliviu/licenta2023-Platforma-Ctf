@@ -13,15 +13,27 @@
         <div class="container">
             <div id="navbarMenuHeroA" class="navbar-menu">
                 <div class="navbar-end">
-                    <a href="{{ url_for('index') }}" class="navbar-item">
+                    {% if session.get('loggedin') %}
+                    <a href="{{ url_for('main.index') }}" class="navbar-item">
                         Home
                     </a>
-                    <a href="{{ url_for('login') }}" class="navbar-item">
+                    <a href="{{ url_for('main.profile') }}" class="navbar-item">
+                        Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="navbar-item">
+                        Logout
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('main.index') }}" class="navbar-item">
+                        Home
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="navbar-item">
                         Login
                     </a>
-                    <a href="{{ url_for('register') }}" class="navbar-item">
+                    <a href="{{ url_for('auth.register') }}" class="navbar-item">
                         Sign Up
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
