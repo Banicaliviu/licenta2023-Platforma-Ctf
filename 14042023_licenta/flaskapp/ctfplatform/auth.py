@@ -3,7 +3,8 @@ from ctfplatform import app
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from ctfplatform.utils import append_new_line, get_db_connection
+from ctfplatform.utils import append_new_line
+from ctfplatform.kubernetes_interactions import get_db_connection
 
 auth_bp = Blueprint('auth', __name__)
     
