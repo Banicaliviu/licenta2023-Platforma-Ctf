@@ -1,9 +1,0 @@
-TO DO list : 
--> Create a new file initDB.py.Design and implement tables for CTF exercises.
--> Implement a CTF exercise model.Create new file <CTF exercise name>.html which displays details of selected CTF and its connection string.
--> Add Kubernetes API and KiddoCTF.
-
-
-DONE list : 
--> Register page
--> Login page
