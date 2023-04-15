@@ -1,5 +1,4 @@
 import re
-from ctfplatform import app
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -15,15 +14,13 @@ def register():
         email = request.form['email']
         username = request.form['username']
         password = request.form['password']
-        role = 'admin'
+        role = 'normal'
 
         _hashed_password = generate_password_hash(password)
 
         try:
             conn = get_db_connection()
-            append_new_line("logs.txt", "connection to Postgresql successfully established !")
             cur = conn.cursor()
-            append_new_line("logs.txt", "cursor successfully created !")
          
             cur.execute('SELECT * from usertable WHERE email = %s', (email,))
             account_chkbyEmail = cur.fetchone()
@@ -82,9 +79,7 @@ def login():
 
         try:
             conn = get_db_connection()
-            append_new_line("logs.txt", "connection to Postgresql successfully established !")
             cur = conn.cursor()
-            append_new_line("logs.txt", "cursor successfully created !")
 
             cur.execute('SELECT * from usertable WHERE email = %s', (email,))
             account = cur.fetchone()
@@ -92,8 +87,6 @@ def login():
             if account:
                 passwd_hs = account[2]
                 if check_password_hash(passwd_hs, password):
-                    #account['id'] intoarce string, cred ca pe aici e problema
-                    #Error : tuple indices must be integers or slices, not str
 
                     session['loggedin'] = True
                     session['id'] = int(account[0])

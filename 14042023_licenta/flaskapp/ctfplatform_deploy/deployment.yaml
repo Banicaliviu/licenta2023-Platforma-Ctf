@@ -18,7 +18,7 @@ spec:
       serviceAccountName: ctfplatformsa
       containers:
       - name: flask
-        image: liviubanica/14042023_licenta_flask_postgres:8
+        image: liviubanica/15042023_licenta_flask_postgres:9
         imagePullPolicy: Always
         ports:
           - name: http

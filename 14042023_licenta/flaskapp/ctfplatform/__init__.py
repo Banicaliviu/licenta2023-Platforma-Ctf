@@ -4,6 +4,10 @@ import time
 app = Flask(__name__)
 app.secret_key = "CTFPlatform"
 
+from ctfplatform.db_create import create_db
+
+create_db()
+
 from ctfplatform.auth import auth_bp
 from ctfplatform.main import main_bp
 
