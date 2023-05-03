@@ -21,8 +21,8 @@
     {% if ctfs %}
       {% for ctf in ctfs %}
         <div class="ctf-box">
-          <div class="ctf-title">{{ ctf.ctftitle }}</div>
-          <div class="ctf-difficulty">Difficulty: {{ ctf.ctfdifficulty }}</div>
+          <div class="ctf-title">{{ ctf.title }}</div>
+          <div class="ctf-difficulty">Difficulty: {{ ctf.difficulty }}</div>
           <div class="ctf-status" style="color: green;">Completed</div>
         </div>
       {% endfor %}

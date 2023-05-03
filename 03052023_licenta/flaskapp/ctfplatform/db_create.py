@@ -90,9 +90,9 @@ def create_db():
             append_new_line("logs.txt", "jeopardycategorytable table successfully created !")
         else:
             # Use below execute command to drop all jeopardy tables(1)
-            cur.execute('DROP TABLE jeopardycategorytable CASCADE;')
-            conn.commit()
-            jeopardycategory_table(conn, cur)
+            # cur.execute('DROP TABLE jeopardycategorytable CASCADE;')
+            # conn.commit()
+            # jeopardycategory_table(conn, cur)
             append_new_line("logs.txt", "jeopardycategorytable table already exists!")
         
         #creation of jeopardy exercise table
@@ -103,9 +103,9 @@ def create_db():
             append_new_line("logs.txt", "jeopardyexercisetable table successfully created !")
         else:
             # Use below execute command to drop all jeopardy tables(2)
-            cur.execute('DROP TABLE jeopardyexercisetable  CASCADE;')
-            conn.commit()
-            jeopardyexercise_table(conn, cur)
+            # cur.execute('DROP TABLE jeopardyexercisetable  CASCADE;')
+            # conn.commit()
+            # jeopardyexercise_table(conn, cur)
             append_new_line("logs.txt", "jeopardyexercisetable table already exists!")
     
         #creation of jeopardy user history table

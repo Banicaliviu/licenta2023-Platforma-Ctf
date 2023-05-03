@@ -1,4 +1,4 @@
-from ctfplatform.JCTF_backend import generate_localpaths, add_JeopardyExercise_context, get_jeopardyexercises_list, get_jeopardyexercise_where_id, add_JeopardyExercise_to_user
+from ctfplatform.JCTF_backend import generate_localpaths, add_JeopardyExercise_context, get_jeopardyexercises_list, get_jeopardyexercise_where_id, add_JeopardyExercise_to_user, update_existing_jctfs_status
 from ctfplatform.utils import append_new_line
 # validate flag, return score for future processing
 def process_flag():
@@ -13,10 +13,15 @@ def init():
 
 def get_jctf_list():
     return get_jeopardyexercises_list()
+
 def get_jctf_id(id):
     return get_jeopardyexercise_where_id(id=id)
+
 def update_userhistory(jctf_id, username):
     add_JeopardyExercise_to_user(jctf_id, username)
+
+def update_jctfs_status():
+    update_existing_jctfs_status()
 
 # For admins only.
 

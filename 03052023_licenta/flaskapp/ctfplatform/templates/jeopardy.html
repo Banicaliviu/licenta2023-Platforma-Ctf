@@ -22,5 +22,14 @@
   </div>
 {% endfor %}
 </div>
+
+{% if role == 'admin' %}
+  <div class="columns is-centered">
+    <div class="column">
+      <a href="{{ url_for('main.add_jeopardy_exercise') }}" class="button is-primary is-pulled-right">Add new exercise</a>
+    </div>
+  </div>
+{% endif %}
+
 <link rel="stylesheet" type="css" href="{{ url_for('static', filename='./css/exercisebox.css') }}">
 {% endblock %}

@@ -14,7 +14,7 @@ def register():
         email = request.form['email']
         username = request.form['username']
         password = request.form['password']
-        role = 'normal'
+        role = 'admin'
 
         _hashed_password = generate_password_hash(password)
 
@@ -80,10 +80,9 @@ def login():
         try:
             conn = get_db_connection()
             cur = conn.cursor()
-
             cur.execute('SELECT * from usertable WHERE email = %s', (email,))
             account = cur.fetchone()
-            
+
             if account:
                 passwd_hs = account[2]
                 if check_password_hash(passwd_hs, password):
@@ -91,6 +90,7 @@ def login():
                     session['loggedin'] = True
                     session['id'] = int(account[0])
                     session['username'] = account[3] 
+                    session['role'] = account[4]
                     
                     append_new_line("logs.txt", "User {} was successfully logged in !".format(session['username']))
                     append_new_line("logs.txt", "Session information: {}".format(session))

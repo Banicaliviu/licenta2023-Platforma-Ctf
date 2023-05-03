@@ -78,6 +78,23 @@ def insert_jeopardyuserhistory(juserhistory):
         raise e   
     
 ##########Selects
+def get_jeopardyhistory_where_userid_list(id):
+    userhistory_list = []
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM jeopardyuserhistorytable WHERE id_user = %s', (id,))
+        userhistory_listdb = cur.fetchall()
+        for row in userhistory_listdb:
+            userhistory_list.append({
+                'id_jeopardyexercise': row[1],
+                'id_user': row[2],
+                'date_completed': row[3]
+            })
+    except Exception as e:
+        append_new_line("logs.txt", "Error retrieving user history: {}".format(e))
+    return userhistory_list
+
 def get_jeopardyexercises_list():
     jeopardy_list = []
     try:
@@ -130,7 +147,39 @@ def get_userid_where_username(username):
     except Exception as e:
         append_new_line("logs.txt", "Error retrieving user: {}".format(e))
     return None
-###########Other
+###########Updates 
+def update_all_status_to_notRunning():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE jeopardyexercisetable SET pod_status = 'Not Running' WHERE pod_status = 'Running'")
+        conn.commit()
+    except Exception as e:
+        append_new_line("logs.txt", "Error updating pod status: {}".format(e))
+        raise e
+
+def update_single_pod_status_to_notRunning(name):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE jeopardyexercisetable SET pod_status = 'Running' WHERE pod_status = 'Not Running' AND title = %s", (name,))
+        conn.commit()
+    except Exception as e:
+        append_new_line("logs.txt", "Error updating pod status: {}".format(e))
+        raise e
+    
+def update_single_pod_status_to_Running(name):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE jeopardyexercisetable SET pod_status = 'Running' WHERE pod_status = 'Not Running' AND title = %s", (name,))
+        conn.commit()
+    except Exception as e:
+        append_new_line("logs.txt", "Error updating pod status: {}".format(e))
+        raise e
+
+
+###########Utility
 # Returns the local path of the ctf exercise. Needed for other details of the ctf, like description, difficulty, title.
 def generate_localpaths():
     try:
@@ -198,7 +247,8 @@ def generate_localpaths():
                 if ctf_path is None:
                     raise Exception('CTF path not found')
                 paths.append(path)
-                append_new_line('logs.txt', 'Paths retrieved successfully!\n')        
+                append_new_line('logs.txt', 'Paths retrieved successfully!\n')
+
         return paths     
     except Exception as e:
         append_new_line('logs.txt', 'Error generating local path: {}'.format(e))
@@ -303,6 +353,33 @@ def add_JeopardyExercise_to_user(jctf_id, username):
         append_new_line('logs.txt', 'Error adding jeopardy exercise to user: {}'.format(e))
         raise e
 
+def update_existing_jctfs_status():
+    try:
+        pods = kube_interaction_inst.kube_list_pods()
+        jctfs = get_jeopardyexercises_list()
+        for pod in pods.items: 
+            if 'ctf-' in pod.metadata.name:
+                if pod.status.phase == 'Running':
+                    split_pod_name = pod.metadata.name.split('-')
+                    ctftitle = split_pod_name[2]
+                    for jctf in jctfs:
+                        if ctftitle == jctf['title'] and jctf['pod_status'] == 'Not Running':
+                            update_single_pod_status_to_Running(ctftitle)
+                            break
+                else:
+                    split_pod_name = pod.metadata.name.split('-')
+                    ctftitle = split_pod_name[2]
+                    for jctf in jctfs:
+                        if ctftitle == jctf['title'] and jctf['pod_status'] == 'Running':
+                            update_single_pod_status_to_notRunning(ctftitle)
+                            break
+            else:
+                update_all_status_to_notRunning()
+                return 1
+        return 0
+    except Exception as e:
+        append_new_line("logs.txt", "Error updating existing pods status: {}".format(e))
+        raise e
     
 # The Dockerfile found in It searches for every file in the respective ctf exercise path with the name equals with : Dockerfile
 # def get_JeopardyExercise_dockerfiles():
