@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1 class="title">
+    Releases
+  </h1>
+  <div class="container">
+    <div class="box">
+      <table class="table is-fullwidth">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Namespace</th>
+            <th>Status</th>
+            <th>Age</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for release in releases %}
+            <tr>
+              <td>{{ release.name }}</td>
+              <td>{{ release.namespace }}</td>
+              <td>{{ release.status }}</td>
+              <td>{{ release.age }}</td>
+              <td>
+                <div class="buttons">
+                  <form method="POST" action="{{ url_for('main.releases') }}">
+                    <input type="hidden" name="release-name" value="{{ release.name }}">
+                    <button type="submit" class="button is-success" name="action" value="authorize_users">Authorize Users</button>
+                    <button type="submit" class="button is-danger" name="action" value="delete">Delete</button>
+                    <button type="submit" class="button is-info" name="action" value="rollout">Rollout</button>
+                    <button type="submit" class="button is-primary" name="action" value="download">Download .tgz</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

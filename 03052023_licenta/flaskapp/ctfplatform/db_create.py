@@ -116,11 +116,11 @@ def create_db():
             append_new_line("logs.txt", "jeopardyuserhistorytable table successfully created !")
         else:
             append_new_line("logs.txt", "jeopardyuserhistorytable table already exists!")
-    
+        cur.close()
     except(Exception) as e:
         append_new_line("logs.txt", "Error : {}".format(e))
+        raise e
     finally:
-        append_new_line("logs.txt", "Database up and running !\n")
-        cur.close()
-        conn.close()
+        if(conn):
+            conn.close()
             

@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-docker build -t liviubanica/ctf-crimemail .
-docker push liviu/ctf-crimemail

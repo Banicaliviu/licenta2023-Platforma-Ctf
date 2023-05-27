@@ -1,26 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="columns is-centered is-flex is-flex-wrap-wrap">
-{% for exercise in exercises %}
-  <div class="column is-half is-flex">
-    <div class="box exercise-box">
-      <div class="exercise-content">
-        <div class="exercise-title">
-          <p class="title has-text-black">{{ exercise.title }}</p>
-        </div>
-        <div class="exercise-description">
-          <p class="has-text-black">{{ exercise.description }}</p>
-        </div>
-        <div class="exercise-actions">
-          <a href="{{ url_for('main.play_jeopardy', id=exercise.id) }}" class="button is-success">Play</a>
-          <p class="subtitle has-text-black">Difficulty: {{ exercise.difficulty }}</p>
-          <p class="pod-status has-text-black">CTF Status: {{ exercise.pod_status }}</p>
-        </div>
-      </div>
-      <div class="exercise-overlay"></div>
-    </div>
-  </div>
-{% endfor %}
+<div class="container">
+  <h1 class="title">Jeopardy Exercises</h1>
+  <p>Here will be listed all jeopardy exercises.</p>
 </div>
 
 {% if role == 'admin' %}
@@ -31,5 +13,5 @@
   </div>
 {% endif %}
 
-<link rel="stylesheet" type="css" href="{{ url_for('static', filename='./css/exercisebox.css') }}">
+<link rel="stylesheet" type="css" href="{{ url_for('static', filename='exercisebox.css') }}">
 {% endblock %}

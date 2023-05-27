@@ -14,29 +14,35 @@
             <div id="navbarMenuHeroA" class="navbar-menu">
                 <div class="navbar-end">
                     {% if session.get('loggedin') %}
-                    <a href="{{ url_for('main.index') }}" class="navbar-item">
-                        Home
-                    </a>
-                    <a href="{{ url_for('main.jeopardy') }}" class="navbar-item">
-                        Jeopardy
-                    </a>
-                    <a href="{{ url_for('main.profile') }}" class="navbar-item">
-                        Profile
-                    </a>
-                    <a href="{{ url_for('auth.logout') }}" class="navbar-item">
-                        Logout
-                    </a>
+                        <a href="{{ url_for('main.index') }}" class="navbar-item">
+                            Home
+                        </a>
+                        <a href="{{ url_for('main.jeopardy') }}" class="navbar-item">
+                            Jeopardy
+                        </a>
+                        <a href="{{ url_for('main.profile') }}" class="navbar-item">
+                            Profile
+                        </a>
+                        <a href="{{ url_for('auth.logout') }}" class="navbar-item">
+                            Logout
+                        </a>
+                        {% if session.get('role') == 'admin' %}
+                            <a href="{{ url_for('main.releases') }}" class="navbar-item">
+                                Releases
+                            </a>
+                        {% endif %}
                     {% else %}
-                    <a href="{{ url_for('main.index') }}" class="navbar-item">
-                        Home
-                    </a>
-                    <a href="{{ url_for('auth.login') }}" class="navbar-item">
-                        Login
-                    </a>
-                    <a href="{{ url_for('auth.register') }}" class="navbar-item">
-                        Sign Up
-                    </a>
+                        <a href="{{ url_for('main.index') }}" class="navbar-item">
+                            Home
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="navbar-item">
+                            Login
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="navbar-item">
+                            Sign Up
+                        </a>
                     {% endif %}
+                   
                 </div>
             </div>
         </div>
