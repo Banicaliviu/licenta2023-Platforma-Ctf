@@ -1,6 +1,7 @@
-from ctfplatform.JCTF_backend import get_jeopardyexercises_list, get_jeopardyexercise_where_id, add_JeopardyExercise_to_user, update_existing_jctfs_status, get_helm_chart_info, helm_install ,helm_list, helm_delete_release
-from ctfplatform.utils import append_new_line
+from ctfplatform.JCTF_backend import get_jeopardyexercises_list, get_jeopardyexercise_where_id, add_JeopardyExercise_to_user, update_existing_jctfs_status, get_helm_chart_info, helm_install, helm_push, helm_list, helm_delete, helm_download
+from ctfplatform.utils import append_new_line, format_timestamp
 from ctfplatform.kubernetes_interactions import kube_interaction_inst
+import datetime
 # validate flag, return score for future processing
 def process_flag():
     return 0
@@ -26,15 +27,32 @@ def update_jctfs_status():
 # Adds the ctf pod to the cluster. The pod name template is : ctf-<category>-<title>-deployment.
 # Returns True if the pod was created successfully.
 
+def get_relevant_info(releases):
+    relevant_info = []
+    for chart in releases.values():
+        for entry in chart:
+            name = entry["name"]
+            version = entry["version"]
+
+            relevant_info.append({
+                "name": name,
+                "version": version,
+                "created": format_timestamp()
+            })
+
+    return relevant_info
 
 def create_JeopardyExercise_helmchart(ctf_name, flag, helm_package_path):
-    chart_info = get_helm_chart_info(helm_package_path)
+    try: 
+        chart_info = get_helm_chart_info(helm_package_path)
     
-    append_new_line("logs.txt", "Installing helm chart with name: {}".format(chart_info["deployment_name"]))
+        append_new_line("logs.txt", "Pushing helm chart with name: {}".format(chart_info["deployment_name"]))
 
-    is_created = helm_install(ctf_name, helm_package_path)
-    #update_existing_jctfs_status(chart_info["namespace"])
-    return is_created
+        res = helm_push(helm_package_path)
+
+        return res
+    except Exception as e: 
+        append_new_line("logs.txt", "Error at pushing helm chart: {}".format(e))
 
 
 def authorize_users(release_name):
@@ -44,15 +62,26 @@ def authorize_users(release_name):
     # Return True for now
     return True
 
+def apply_release(release_name, release_version):
+    try: 
+        append_new_line("logs.txt", "Installing release with name: {}".format(release_name))
 
-def delete_release(release_name, namespace='default'):
+        tgz_file = helm_download(release_name, release_version)
+        if tgz_file:
+            res = helm_install(tgz_file)
+
+        return res
+    except Exception as e: 
+        append_new_line("logs.txt", "Error installing helm chart: {}".format(e))
+
+def delete_release(release_name, release_version):
     append_new_line("logs.txt", f"Deleting release '{release_name}'...")
-    success = helm_delete_release(release_name, namespace)
-    if success:
+    res = helm_delete(release_name, release_version)
+    if res:
         append_new_line("logs.txt", f"Release '{release_name}' has been deleted.")
     else:
         append_new_line("logs.txt", f"Failed to delete release '{release_name}'.")
-    return success
+    return res
 
 def rollout_release(release_name):
     append_new_line("logs.txt", "Rollout release")
@@ -61,24 +90,19 @@ def rollout_release(release_name):
     return True
 
 
-def download_release(release_name):
-    append_new_line("logs.txt", "Download release")
-    # Logic to download the specified release
-    # Return True for now
+def download_release(release_name, release_version):
+    append_new_line("logs.txt", "Downloading release")
+    tgz_file = helm_download(release_name, release_version)
+
     return True
 
 def get_helm_releases():
     append_new_line("logs.txt", "Listing all Helm releases...")
-    
-    # Retrieve the list of namespaces
-    namespaces = kube_interaction_inst.kube_list_namespaces()
+    releases_json = helm_list()
+    releases_relinfo = get_relevant_info(releases_json)
 
-    releases = []
-    for namespace in namespaces:
-        namespace_releases = helm_list(namespace)
-        releases.extend(namespace_releases)
-    
-    return releases
+    return releases_relinfo
+
 # Adds the ctf service of pod to the cluster. The service name template is : ctf-<category>-<title>-service.
 # Parameters: app field needed for selecting the pod, ~~~
 # note to think later: strings like : "web", "crypto", "for" etc for creating the right service

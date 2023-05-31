@@ -10,27 +10,32 @@
         <thead>
           <tr>
             <th>Name</th>
-            <th>Namespace</th>
-            <th>Status</th>
-            <th>Age</th>
+            <th>Version</th>
+            <th>Created At</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for release in releases %}
             <tr>
-              <td>{{ release.name }}</td>
-              <td>{{ release.namespace }}</td>
-              <td>{{ release.status }}</td>
-              <td>{{ release.age }}</td>
+              <td>{{ release["name"] }}</td>
+              <td>{{ release["version"] }}</td>
+              <td>{{ release["created"] }}</td>
               <td>
                 <div class="buttons">
                   <form method="POST" action="{{ url_for('main.releases') }}">
                     <input type="hidden" name="release-name" value="{{ release.name }}">
+                    <input type="hidden" name="release-version" value="{{ release.version }}">
+                    <input type="text" name="folder-path" placeholder="Enter folder path">
+                    <button type="submit" class="button is-success" name="action" value="apply_release">Apply</button>
                     <button type="submit" class="button is-success" name="action" value="authorize_users">Authorize Users</button>
                     <button type="submit" class="button is-danger" name="action" value="delete">Delete</button>
                     <button type="submit" class="button is-info" name="action" value="rollout">Rollout</button>
-                    <button type="submit" class="button is-primary" name="action" value="download">Download .tgz</button>
+                    <button type="submit" class="button is-primary" name="action" value="download">
+                      <a href="{{ url_for('main.download', release_name=release.name,  release_version=release.version) }}">
+                        Download
+                      </a>
+                    </button>
                   </form>
                 </div>
               </td>

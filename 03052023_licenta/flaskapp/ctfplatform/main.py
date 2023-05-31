@@ -1,13 +1,15 @@
 import re
 import os
 from ctfplatform import app
-from flask import Blueprint, flash, redirect, render_template, session, url_for, request
+from flask import Blueprint, flash, redirect, render_template, session, url_for, request, jsonify, send_file
 from ctfplatform.utils import append_new_line
-from ctfplatform.JCTF_actions import get_jctf_list, init, get_jctf_id, update_userhistory, update_jctfs_status, create_JeopardyExercise_helmchart, get_helm_releases, download_release, authorize_users, rollout_release, delete_release
-from ctfplatform.main_actions  import update_profile
+from ctfplatform.JCTF_actions import get_jctf_id, update_userhistory, update_jctfs_status, create_JeopardyExercise_helmchart, get_helm_releases, download_release, authorize_users, rollout_release, apply_release, delete_release
+from ctfplatform.main_actions  import init,update_profile
 from werkzeug.utils import secure_filename
 
 
+
+DOWNLOAD_FOLDER = '/flaskapp/downloads'
 main_bp = Blueprint('main', __name__)
 
 UPLOAD_FOLDER = 'uploads'
@@ -15,6 +17,7 @@ ALLOWED_EXTENSIONS = {'tgz'}
 
 @main_bp.route('/')
 def index():
+    init()
     return render_template('index.html')
 
 @main_bp.route('/profile')
@@ -84,6 +87,7 @@ def add_jeopardy_exercise():
 def releases():
     if request.method == 'POST':
         release_name = request.form.get('release-name')
+        release_version = request.form.get('release-version')
         action = request.form.get('action')
         if release_name:
             if action == 'authorize_users':
@@ -93,7 +97,7 @@ def releases():
                 else:
                     flash(f"Failed to authorize users for release '{release_name}'.", "error")
             elif action == 'delete':
-                result = delete_release(release_name)
+                result = delete_release(release_name, release_version)
                 if result:
                     flash(f"Release '{release_name}' has been deleted.", "success")
                 else:
@@ -105,11 +109,17 @@ def releases():
                 else:
                     flash(f"Failed to initiate rollout for release '{release_name}'.", "error")
             elif action == 'download':
-                result = download_release(release_name)
+                redirect(url_for('main.download', release_name=release_name, release_version=release_version))
                 if result:
                     flash(f"Release '{release_name}' downloaded successfully.", "success")
                 else:
                     flash(f"Failed to download release '{release_name}'.", "error")
+            elif action == 'apply_release':
+                result = apply_release(release_name, release_version)
+                if result:
+                    flash(f"Release '{release_name}' applied successfully.", "success")
+                else:
+                    flash(f"Failed to apply release '{release_name}'.", "error")
             else:
                 flash("Invalid action selected.", "error")
         else:
@@ -118,6 +128,25 @@ def releases():
     else:
         releases = get_helm_releases()
         return render_template('releases.html', releases=releases)
+    
+@main_bp.route('/download', methods=['POST'])
+def download():
+    release_name = request.form.get('release-name')
+    folder_path = request.form.get('folder-path')
+
+    if release_name and folder_path:
+        tgz_file = download_release(release_name)
+        if tgz_file:
+            destination_path = os.path.join(DOWNLOAD_FOLDER, folder_path, f"{release_name}.tgz")
+            os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+            os.rename(tgz_file, destination_path)
+            flash(f"Release '{release_name}' downloaded successfully.", "success")
+        else:
+            flash(f"Failed to download release '{release_name}'.", "error")
+    else:
+        flash("Please select a release and specify a folder path.", "error")
+    
+    return redirect(url_for('main.releases'))
     
 def allowed_file(filename):
     return '.' in filename and \

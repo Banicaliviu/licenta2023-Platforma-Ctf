@@ -5,6 +5,7 @@ import re
 import tarfile
 import yaml
 import subprocess
+import json
 
 EASY_JCTF_1STARRATED = 'basic'
 EASY_JCTF_2STARRATED = 'in luck'
@@ -253,47 +254,80 @@ def update_existing_jctfs_status(namespace):
         raise e
     
 #Working with helm 
+
 def get_JeopardyExercise_solution():
     solution = ''
     return solution
 
-def helm_install(ctf_name, helm_package_path):
+def helm_push(helm_package_path):
     try:
-        subprocess.run(["helm", "install", ctf_name, helm_package_path])
-        append_new_line("logs.txt", "Instalation Success")
-        return 1
+        cm_url = kube_interaction_inst.kube_get_chartmuseum()
+        if cm_url is not None:
+            result = subprocess.run(["helm", "cm-push", helm_package_path, f"{cm_url}"])
+            if result.returncode == 0:
+                append_new_line("logs.txt", "Package pushed to ctfplatform-chartmuseum")
+                return 1 
     except Exception as e:
-        append_new_line("logs.txt", "Instalation failed: {}".format(e))
-        return 0
+        append_new_line("logs.txt", "Package push failed: {}".format(e))
+        raise e
+  
+def helm_install(helm_release_name):
+    try:
+        cm_url = kube_interaction_inst.kube_get_chartmuseum()
+        if cm_url is not None:
+            subprocess.run(["helm", "install", helm_release_name, helm_release_name])
+            append_new_line("logs.txt", "Installation Success")
+            return 1
+    except Exception as e:
+        append_new_line("logs.txt", f"Installation failed: {str(e)}")
+        raise e
     
-def helm_list(namespace):
+def helm_download(helm_release_name, version):
     try:
-        result = subprocess.run(['helm', 'list', '--namespace', namespace], capture_output=True, text=True)
-        if result.returncode == 0:
-            releases = result.stdout.strip().split('\n')[1:]  # Exclude the header row
-            append_new_line("logs.txt", "Listing Success")
-            return releases
-        else:
-            append_new_line("logs.txt", f"Failed to retrieve releases: {result.stderr}")
-            return []
+        cm_url = kube_interaction_inst.kube_get_chartmuseum()
+        if cm_url is not None:
+            output_tgz_file = f'{helm_release_name}.tgz'
+            subprocess.run(["curl", f'{cm_url}/api/charts/{helm_release_name}/{version} --output {output_tgz_file}'])
+            append_new_line("logs.txt", "Download Success")
+        return output_tgz_file
     except Exception as e:
-        append_new_line("logs.txt", f"Failed to retrieve releases: {str(e)}")
+        append_new_line("logs.txt", f"Download failed: {e}")
+        raise e
+
+def helm_list():
+    try:
+        cm_url = kube_interaction_inst.kube_get_chartmuseum()
+
+        if cm_url is not None:
+            result = subprocess.run(['curl', f'{cm_url}/api/charts'], capture_output=True, text=True)
+            if result.returncode == 0:
+                releases = json.loads(result.stdout)
+                return releases
+            else:
+                append_new_line("logs.txt", f"Failed to list charts: {result.stderr}")
+                return []
+    except Exception as e:
+        append_new_line("logs.txt", f"Failed to retrieve charts: {str(e)}")
         return []
-    
-def helm_delete_release(release_name, namespace):
+
+def helm_delete(release_name, version):
     try:
-        result = subprocess.run(['helm', 'delete', release_name, '--namespace', namespace], capture_output=True, text=True)
+        cm_url = kube_interaction_inst.kube_get_chartmuseum()
+
+        if cm_url is not None:
+            result = subprocess.run(['curl', '-X DELETE', f'{cm_url}/api/charts/{release_name}/{version}'])
         if result.returncode == 0:
-            return True
+            append_new_line("logs.txt", f"Chart package '{release_name}' deleted successfully.")
         else:
-            return False
+            raise Exception(f"Failed to delete chart package '{release_name}'.")
     except Exception as e:
-        return False
+        raise e
 
 def get_helm_chart_info(helm_package_path):
     deployment_name = None
     port = None
     namespace = None
+    version = None
 
     with tarfile.open(helm_package_path, 'r:gz') as tar:
         chart_files = [member for member in tar.getmembers() if member.isfile()]
@@ -305,10 +339,9 @@ def get_helm_chart_info(helm_package_path):
                 deployment_info = values_data.get('deployment', {})
                 service_info = values_data.get('service', {})
                 
-
                 deployment_name = deployment_info.get('name', deployment_name)
                 port = service_info.get('port', port)
-                
+            
                 break
 
     return {"deployment_name": deployment_name, "port": port, "namespace": namespace}
