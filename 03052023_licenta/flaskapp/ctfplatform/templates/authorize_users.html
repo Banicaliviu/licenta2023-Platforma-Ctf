@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1 class="title" id="page-title">
+    Authorize Users
+  </h1>
+  <div class="container">
+    <div class="tabs">
+      <ul>
+        <li class="tab is-active" data-tab="authorize-users-tab">
+          <a>Authorize Users</a>
+        </li>
+        <li class="tab" data-tab="authorize-group-tab">
+          <a>Authorize Group</a>
+        </li>        
+      </ul>
+    </div>
+    <div class="box" id="authorize-users-tab">
+      <div class="field">
+        <label class="label">Search User</label>
+        <div class="control">
+          <input class="input" type="text" id="search-user-field" placeholder="Enter username">
+        </div>
+      </div>
+      <table class="table is-fullwidth">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Username</th>
+            <th>Group</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="user-list">
+          <!-- User list will be populated dynamically -->
+        </tbody>
+      </table>
+      <div class="buttons">
+        {% if user_authorized %}
+          <button class="button is-success"  href="{{ url_for('main.releases') }}" type="submit">Save</button>
+        {% endif %}
+        <a class="button is-danger" href="{{ url_for('main.releases') }}">Cancel</a>
+      </div>
+    </div>
+    <div class="box" id="authorize-group-tab" style="display: none;">
+      <div class="field">
+        <label class="label">Search Group</label>
+        <div class="control">
+          <input class="input" type="text" id="search-group-field" placeholder="Enter group name">
+        </div>
+      </div>
+      <table class="table is-fullwidth">
+        <thead>
+          <tr>
+            <th>Group Name</th>
+            <th>Members</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="group-list">
+          <!-- Group list will be populated dynamically -->
+        </tbody>
+      </table>
+      <div class="buttons">
+        <button class="button is-success" id="group-save-button" style="display: none;">Save</button>
+        <a class="button is-danger" href="{{ url_for('main.releases') }}">Cancel</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Sample user data (replace with your data source)
+      var users = [
+        { email: "user1@example.com", username: "user1", group: "Group A" },
+        { email: "user2@example.com", username: "user2", group: "Group B" },
+        { email: "user3@example.com", username: "user3", group: "Group A" }
+      ];
+
+      // Sample group data (replace with your data source)
+      var groups = [
+        { name: "Group A", members: 5 },
+        { name: "Group B", members: 3 },
+        { name: "Group C", members: 8 }
+      ];
+
+      // Function to populate the user list based on search query
+      function populateUserList(query) {
+        var userList = $('#user-list');
+        userList.empty();
+
+        // Filter users based on query
+        var filteredUsers = users.filter(function(user) {
+          return user.username.toLowerCase().includes(query.toLowerCase());
+        });
+
+        // Append user rows to the table
+        filteredUsers.forEach(function(user) {
+          var row = '<tr>' +
+                      '<td>' + user.email + '</td>' +
+                      '<td>' + user.username + '</td>' +
+                      '<td>' + user.group + '</td>' +
+                      '<td><button class="button is-success authorize-button">Authorize</button></td>' +
+                    '</tr>';
+          userList.append(row);
+        });
+      }
+
+      // Function to populate the group list based on search query
+      function populateGroupList(query) {
+        var groupList = $('#group-list');
+        groupList.empty();
+
+        // Filter groups based on query
+        var filteredGroups = groups.filter(function(group) {
+          return group.name.toLowerCase().startsWith(query.toLowerCase());
+        });
+
+        // Append group rows to the table
+        filteredGroups.forEach(function(group) {
+          var row = '<tr>' +
+                      '<td>' + group.name + '</td>' +
+                      '<td>' + group.members + '</td>' +
+                      '<td><button class="button is-success authorize-button">Authorize</button></td>' +
+                    '</tr>';
+          groupList.append(row);
+        });
+      }
+
+      // Event handler for tab switching
+      $('.tab').on('click', function() {
+        var tabId = $(this).attr('data-tab');
+        $('.tab').removeClass('is-active');
+        $(this).addClass('is-active');
+        $('.box').hide();
+        $('#' + tabId).show();
+
+        // Update page title based on active tab
+        var pageTitle = (tabId === 'authorize-group-tab') ? 'Authorize Group' : 'Authorize Users';
+        $('#page-title').text(pageTitle);
+      });
+
+      // Event handler for user search field
+      $('#search-user-field').on('input', function() {
+        var searchQuery = $(this).val();
+        populateUserList(searchQuery);
+      });
+
+      // Event handler for group search field
+      $('#search-group-field').on('input', function() {
+        var searchQuery = $(this).val();
+        populateGroupList(searchQuery);
+      });
+
+      // Event handler for authorize buttons
+      $(document).on('click', '.authorize-button', function() {
+        // Perform authorization logic here
+
+        // Show save button if at least one user/group is authorized
+        if ($('#authorize-users-tab').is(':visible')) {
+          $('#user-save-button').show();
+        } else if ($('#authorize-group-tab').is(':visible')) {
+          $('#group-save-button').show();
+        }
+      });
+    });
+  </script>
+{% endblock %}

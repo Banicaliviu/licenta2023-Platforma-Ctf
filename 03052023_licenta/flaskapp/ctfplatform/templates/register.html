@@ -22,15 +22,28 @@
                     <input class="input is-large" type="password" name="password" placeholder="Password">
                 </div>
             </div>
+
+            <div class="field">
+                <label class="label">Role</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="role">
+                            <option value="admin">Admin</option>
+                            <option value="normal">Normal</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
             <button class="button is-block is-info is-large is-fullwidth">Sign Up</button>
         </form>
     </div>
 </div>
 {% with messages = get_flashed_messages() %}
 {% if messages %}
-    <div class="notification is-danger">
+    <!-- <div class="notification is-danger">
         {{ messages[0] }}. Go to <a href="{{ url_for('auth.login') }}">login page</a>.
-    </div>
+    </div> -->
 {% endif %}
 {% endwith %}
 <form method="POST" action="{{ url_for('auth.register') }}"></form>

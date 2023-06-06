@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CTF platform</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 
 <body>
@@ -30,6 +31,9 @@
                             <a href="{{ url_for('main.releases') }}" class="navbar-item">
                                 Releases
                             </a>
+                            <a href="{{ url_for('auth.register') }}" class="navbar-item">
+                                Register Users
+                            </a>
                         {% endif %}
                     {% else %}
                         <a href="{{ url_for('main.index') }}" class="navbar-item">
@@ -38,31 +42,27 @@
                         <a href="{{ url_for('auth.login') }}" class="navbar-item">
                             Login
                         </a>
-                        <a href="{{ url_for('auth.register') }}" class="navbar-item">
-                            Sign Up
-                        </a>
                     {% endif %}
-                   
                 </div>
             </div>
         </div>
     </nav>
-    <section class="hero is-primary is-fullheight has-background-grey-dark">
-        <div class="box">
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="notification">
-                        {% for message in messages %}
-                            <p>{{ message }}</p>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-        </div>
+    <section class="hero is-primary is-fullheight">
         <div class="hero-body">
             <div class="container">
-               {% block content %}
-               {% endblock %}
+                <div class="notification">
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <p>{{ message }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                {% block content %}
+                {% endblock %}
+                {% block scripts %}
+                {% endblock %}
             </div>
         </div>
     </section>

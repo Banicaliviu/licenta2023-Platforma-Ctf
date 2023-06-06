@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block content %}
   <h1 class="title">
     Releases
@@ -16,33 +15,37 @@
           </tr>
         </thead>
         <tbody>
+          {% set unique_names = [] %}
           {% for release in releases %}
-            <tr>
-              <td>{{ release["name"] }}</td>
-              <td>{{ release["version"] }}</td>
-              <td>{{ release["created"] }}</td>
-              <td>
-                <div class="buttons">
-                  <form method="POST" action="{{ url_for('main.releases') }}">
-                    <input type="hidden" name="release-name" value="{{ release.name }}">
-                    <input type="hidden" name="release-version" value="{{ release.version }}">
-                    <input type="text" name="folder-path" placeholder="Enter folder path">
-                    <button type="submit" class="button is-success" name="action" value="apply_release">Apply</button>
-                    <button type="submit" class="button is-success" name="action" value="authorize_users">Authorize Users</button>
-                    <button type="submit" class="button is-danger" name="action" value="delete">Delete</button>
-                    <button type="submit" class="button is-info" name="action" value="rollout">Rollout</button>
-                    <button type="submit" class="button is-primary" name="action" value="download">
-                      <a href="{{ url_for('main.download', release_name=release.name,  release_version=release.version) }}">
-                        Download
-                      </a>
-                    </button>
-                  </form>
-                </div>
-              </td>
-            </tr>
+            {% if release["name"] not in unique_names %}
+              {% set unique_names = unique_names + [release["name"]] %}
+              <tr>
+                <td>{{ release["name"] }}</td>
+                <td>{{ release["version"] }}</td>
+                <td>{{ release["created"] }}</td>
+                <td>
+                  <div class="buttons">
+                    <form id="form_{{ release.name }}" method="POST" action="{{ url_for('main.releases') }}">
+                      <input type="hidden" name="release-name" value="{{ release.name }}">
+                      <input type="hidden" name="release-version" value="{{ release.version }}">
+                      <button id="install_button_{{ release.name }}" type="submit" class="button is-success install-button" name="action" value="apply_release">Install</button>
+                      <button id="uninstall_button_{{ release.name }}" type="submit" class="button is-danger uninstall-button" name="action" value="uninstall_release" data-installed="False">Uninstall</button>
+                      <button type="submit" class="button is-success" name="action" value="authorize_users">Authorize Users</button>
+                      <button type="submit" class="button is-danger" name="action" value="delete_release">Delete</button>
+                      <button type="submit" class="button is-info" name="action" value="rollout">Rollout</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endif %}
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
+{% endblock %}
+{% block scripts %}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="{{ url_for('static', filename='install_uninstall.js') }}"></script>
 {% endblock %}
