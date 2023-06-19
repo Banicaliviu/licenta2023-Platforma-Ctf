@@ -24,9 +24,6 @@
                         <a href="{{ url_for('main.profile') }}" class="navbar-item">
                             Profile
                         </a>
-                        <a href="{{ url_for('auth.logout') }}" class="navbar-item">
-                            Logout
-                        </a>
                         {% if session.get('role') == 'admin' %}
                             <a href="{{ url_for('main.releases') }}" class="navbar-item">
                                 Releases
@@ -34,7 +31,13 @@
                             <a href="{{ url_for('auth.register') }}" class="navbar-item">
                                 Register Users
                             </a>
+                            <a href="{{ url_for('main.create_group') }}" class="navbar-item">
+                                Create Groups
+                            </a>
                         {% endif %}
+                        <a href="{{ url_for('auth.logout') }}" class="navbar-item">
+                            Logout
+                        </a>
                     {% else %}
                         <a href="{{ url_for('main.index') }}" class="navbar-item">
                             Home
@@ -47,18 +50,18 @@
             </div>
         </div>
     </nav>
+    <div class="notification">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
     <section class="hero is-primary is-fullheight">
         <div class="hero-body">
             <div class="container">
-                <div class="notification">
-                    {% with messages = get_flashed_messages() %}
-                        {% if messages %}
-                            {% for message in messages %}
-                                <p>{{ message }}</p>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-                </div>
                 {% block content %}
                 {% endblock %}
                 {% block scripts %}

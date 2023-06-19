@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chartmuseum-ingress
+  namespace: ctfspace
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    cert-manager.io/issuer: "letsencrypt-prod" 
+spec:
+  tls:
+    - hosts:
+      - chartmuseum.192.168.49.2.nip.io
+  rules:
+    - host: chartmuseum.192.168.49.2.nip.io
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ .Values.service.name }}
+                port: 
+                  number: 8080
+            path: /
+            pathType: Prefix

@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="column is-4 is-offset-4">
-    <h3 class="title">Sign Up</h3>
+    <h3 class="title">Create Users</h3>
     <div class="box">
         <form method="POST" action="{{ url_for('auth.register') }}">
             <div class="field">
@@ -28,8 +28,22 @@
                 <div class="control">
                     <div class="select">
                         <select name="role">
-                            <option value="admin">Admin</option>
                             <option value="normal">Normal</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Assign to group</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="group">
+                            <option value="None">None</option>
+                            {% for group in groups %}
+                                <option value="{{ group }}">{{ group }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                 </div>

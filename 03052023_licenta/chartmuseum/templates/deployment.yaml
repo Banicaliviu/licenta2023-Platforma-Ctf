@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.deployment.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.deployment.name }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount }}
+      containers:
+        - name: chartmuseum
+          image: {{ .Values.deployment.imageName}}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: STORAGE
+              value: local
+            - name: STORAGE_LOCAL_ROOTDIR
+              value: /charts
+          volumeMounts:
+            - name: chartmuseum-storage
+              mountPath: /charts
+      volumes:
+        - name: chartmuseum-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.pvc.name }}
+      resources:
+       limits:
+        cpu: 1000m
+        memory: 1Gi
+       requests:
+        cpu: 712m
+        memory: 712Mi

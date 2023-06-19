@@ -56,8 +56,10 @@ class ReleaseObj:
 class ImageObj:
     def __init__(self):
         pass
-    def __init__(self, name, tag, fullUrl, inUse):
+    def __init__(self, name, tag, fullUrl, inUse, digest):
         self.name = name
         self.tag = tag
         self.fullUrl = fullUrl
         self.inUse = inUse
+        self.imageDigest = digest
+        

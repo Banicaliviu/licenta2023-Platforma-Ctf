@@ -21,11 +21,13 @@ body {
 }
 
 .notification p {
+    background-color: #333;
+    color: #022e086b;
     margin: 0;
 }
 
 .hero.is-primary {
-    background-color: #021930;
+    background-color: #232425;
     color: #fff;
 }
 

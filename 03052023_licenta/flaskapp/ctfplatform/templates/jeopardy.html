@@ -1,17 +1,25 @@
 {% extends "base.html" %}
+
 {% block content %}
 <div class="container">
   <h1 class="title">Jeopardy Exercises</h1>
-  <p>Here will be listed all jeopardy exercises.</p>
+  <p>List with all available jeopardy-type CTFs.</p>
+
+  <div class="exercise-list">
+    {% for exercise in jeopardy_exercises %}
+          {% include 'jeopardy-model.html' %}
+    {% endfor %}
+  </div>
 </div>
 
 {% if role == 'admin' %}
   <div class="columns is-centered">
     <div class="column">
-      <a href="{{ url_for('main.add_jeopardy_exercise') }}" class="button is-primary is-pulled-right">Add new exercise</a>
+      <a href="{{ url_for('main.add_jeopardy_exercise_helm_chart') }}" class="button is-primary is-pulled-right">Add new exercise using Helm chart</a>
+      <a href="{{ url_for('main.add_jeopardy_exercise_dockerfile') }}" class="button is-primary is-pulled-right">Add new exercise via Dockerfile</a>
     </div>
   </div>
 {% endif %}
 
-<link rel="stylesheet" type="css" href="{{ url_for('static', filename='exercisebox.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='exercisebox.css') }}">
 {% endblock %}

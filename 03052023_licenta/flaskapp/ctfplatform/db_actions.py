@@ -3,6 +3,25 @@ from ctfplatform.utils import append_new_line, format_timestamp
 
 
 ###########################################Inserts
+###############GROUPS
+def insert_group(groupname):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "INSERT INTO grouptable (name) VALUES (%s)",
+            (groupname,),
+        )
+        conn.commit()
+
+        return True
+    except Exception as e:
+        append_new_line(
+                        "logs.txt",
+                        "Cannot insert group to database: {}".format(groupname),
+                    )        
+        raise e
 ###############RELEASES
 
 def insert_release(releaseInfo):
@@ -12,6 +31,47 @@ def insert_release(releaseInfo):
     )
     return True
 
+###############MANIFESTS
+def insert_kube_manifests(name, imageName, deployment_fp, service_fp, namespace_fp, replicas, status, nodePort, fullUrl):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id_manifest FROM manifeststable WHERE name = %s",
+            (name,),
+        )
+        result = cur.fetchone()
+        if result:
+            append_new_line(
+                "logs.txt",
+                "Cannot insert two manifests with same name: {}".format(name),
+            )
+            conn.close()
+            raise Exception("Cannot insert two manifests with same name: {}".format(name))
+        else: 
+            cur.execute(
+                    "INSERT INTO manifeststable (name, imageName, deployment_file_path, service_file_path, namespace_file_path, replicas, status, nodePort, fullUrl)" 
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (
+                        name,
+                        imageName,
+                        deployment_fp,
+                        service_fp,
+                        namespace_fp, 
+                        replicas,
+                        status,
+                        nodePort,
+                        fullUrl
+                    ),
+                )
+            conn.commit()
+            append_new_line(
+                "logs.txt", "Manifest added:\nName:{}\nImage name:{}\nstatus:".format(name, imageName, status)
+            )
+            conn.close()
+    except Exception as e: 
+        append_new_line("logs.txt", "Error inserting manifests: {}".format(e))
+        raise e
 
 ###############IMAGES
 # todo
@@ -132,16 +192,17 @@ def get_jeopardyexercises_list():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM jeopardyexercisetable")
+        cur.execute("SELECT * FROM jeopardystable")
         exercises = cur.fetchall()
         for exercise in exercises:
             jeopardy_list.append(
                 {
                     "id": exercise[0],
-                    "title": exercise[1],
+                    "name": exercise[1],
                     "description": exercise[2],
-                    "difficulty": exercise[3],
-                    "pod_status": exercise[7],
+                    "status": exercise[3],
+                    "fullUrl": exercise[4],
+                    "score": exercise[6]
                 }
             )
     except Exception as e:
@@ -177,11 +238,29 @@ def get_userid_where_username(username):
         cur.execute("SELECT * FROM usertable WHERE username=%s", (username,))
         user = cur.fetchone()
         if user:
-            return {"id": user[0]}
+            return user[0]
     except Exception as e:
         append_new_line("logs.txt", "Error retrieving user: {}".format(e))
     return None
 
+def get_groups():
+    group_list = []
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM grouptable")
+        groups = cur.fetchall()
+        for group in groups:
+            group_list.append(
+                {
+                    "id": group[0],
+                    "name": group[1]
+                }
+            )
+        return group_list
+    except Exception as e:
+        append_new_line("logs.txt", "Error retrieving group: {}".format(e))
+        return None
 
 ###########Updates
 def update_all_status_to_notRunning():

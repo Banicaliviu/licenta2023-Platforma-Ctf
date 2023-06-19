@@ -15,17 +15,20 @@ from flask import (
 from ctfplatform.utils import append_new_line, allowed_file
 from ctfplatform.JCTF_actions import (
     create_JeopardyExercise_helmchart,
+    create_JeopardyExercise_dockerfile,
     get_helm_releases,
     update_userhistory,
+    get_jctf_list,
     update_jctfs_status, 
     authorize_users,
     rollout_release,
     apply_release,
     delete_release,
     uninstall_release,
-    get_jctf_id
+    get_jctf_id,
+    verify_image
 )
-from ctfplatform.main_actions import init, update_profile
+from ctfplatform.main_actions import init, update_profile, new_group
 from werkzeug.utils import secure_filename
 
 main_bp = Blueprint("main", __name__)
@@ -51,7 +54,8 @@ def profile():
 
 @main_bp.route("/jeopardy")
 def jeopardy():
-    return render_template("jeopardy.html", role=session["role"])
+    exercises = get_jctf_list()
+    return render_template("jeopardy.html", role=session["role"], jeopardy_exercises=exercises)
 
 
 @main_bp.route("/jeopardy/<int:id>/play", methods=["GET", "POST"])
@@ -63,32 +67,66 @@ def play_jeopardy(id):
         flag = request.form["flag"]
         append_new_line("logs.txt", "Flag submited is {}".format(flag))
         if flag == exercise["flag"]:
-            flash("Flag is correct")
+            flash("Flag is correct", "success")
             append_new_line("logs.txt", "Updating profile...")
             update_userhistory(exercise["id"], session["username"])
         else:
-            flash("Flag is incorrect")
+            flash("Flag is incorrect", "error")
         return render_template(
             "play_jeopardy.html",
-            jeopardyTitle=exercise["title"],
+            jeopardyName=exercise["name"],
             jeopardyDescription=exercise["description"],
-            jeopardyDifficulty=exercise["difficulty"],
+            jeopardyStatus=exercise["status"],
         )
     return render_template(
         "play_jeopardy.html",
-        jeopardyTitle=exercise["title"],
+        jeopardyName=exercise["name"],
         jeopardyDescription=exercise["description"],
-        jeopardyDifficulty=exercise["difficulty"],
+        jeopardyStatus=exercise["status"],
     )
 
 
 #######Only admins can access
-@main_bp.route("/add_jeopardy_exercise", methods=["GET", "POST"])
-def add_jeopardy_exercise():
+@main_bp.route("/add_jeopardy_exercise_dockerfile", methods =["GET", "POST"])
+def add_jeopardy_exercise_dockerfile():
+    if request.method == "POST":
+        username = session["username"]
+        ctf_name = request.form.get("ctf-name")
+        flag = request.form.get("flag")
+        score = request.form.get("score")
+        dockerfile = request.files["dockerfile"]
+        imageName_tag = request.form.get("imagename")
+        digest = request.form.get("digest")
+
+        if dockerfile.filename == "Dockerfile":
+            filename = secure_filename(dockerfile.filename)
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+
+            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+            dockerfile.save(file_path)
+        res = verify_image(imageName_tag, digest)
+        if res == True:
+            res = create_JeopardyExercise_dockerfile(ctf_name, flag, score, file_path, imageName_tag, digest, username)
+
+        if res == True:
+            flash(
+                "Image pushed successfully.", "success"
+            )
+        else: 
+            flash(
+                "Image push failed.", "error"
+            )
+        return render_template("add_jeopardy_via_dockerfile.html")
+    return render_template("add_jeopardy_via_dockerfile.html")
+
+@main_bp.route("/add_jeopardy_exercise_helm_chart", methods=["GET", "POST"])
+def add_jeopardy_exercise_helm_chart():
     if request.method == "POST":
         ctf_name = request.form.get("ctf-name")
         uploaded_file = request.files["helm-package"]
         flag = request.form.get("flag")
+        score = request.form.get("score")
         #To do: 
         #install the chart too 
         #insert the neccessaries to db 
@@ -101,16 +139,16 @@ def add_jeopardy_exercise():
 
             uploaded_file.save(file_path)
 
-            create_JeopardyExercise_helmchart(ctf_name, flag, file_path)
+            create_JeopardyExercise_helmchart(ctf_name, flag, score, file_path)
             flash(
-                "Helm chart pushed successfully."
+                "CTF created successfully"
             )
         else:
-            flash("Invalid file. Please provide a valid .tgz Helm package.")
+            flash("Invalid file. Please provide a valid .tgz Helm package.", "error")
 
-        return render_template("add_jeopardy.html")
+        return render_template("add_jeopardy_via_helm_chart.html")
 
-    return render_template("add_jeopardy.html")
+    return render_template("add_jeopardy_via_helm_chart.html")
 
 
 @main_bp.route("/releases", methods=["GET", "POST"])
@@ -188,6 +226,20 @@ def releases():
         releases = get_helm_releases()
         return render_template("releases.html", releases=releases)
 
+@main_bp.route("/create_group", methods=["GET", "POST"])
+def create_group():
+    if request.method == "POST":
+        group_name = request.form.get("groupname")
+        res = new_group(group_name)
+        if res == "samename":
+            flash("Cannot create two groups with same name", "error")
+            return redirect(url_for("main.create_group"))
+        if res == True:
+            flash("Group created successfully.", "success")
+        else:
+            flash("Error while creating group", "error")
+        return redirect(url_for("main.create_group"))
+    return render_template("register_group.html")
 
 @main_bp.route("/authorize_users", methods=["GET", "POST"])
 def authorize_users():
@@ -205,3 +257,23 @@ def authorize_users():
     ]
 
     return render_template("authorize_users.html", users=users)
+####Utility
+@main_bp.route("/get_users", methods=["GET"])
+def get_users():
+    users = [
+        {"email": "user1@example.com", "username": "user1", "group": "Group A"},
+        {"email": "user2@example.com", "username": "user2", "group": "Group B"},
+        {"email": "user3@example.com", "username": "user3", "group": "Group A"},
+        {"email": "user4@example.com", "username": "user4", "group": "Group C"},
+    ]
+    
+    return jsonify(users)
+@main_bp.route("/get_groups", methods=["GET"])
+def get_groups():
+    groups = [
+        {"name": "group1", "members": "1"},
+        {"name": "C114A", "members": "2"},
+        {"name": "ueFrog", "members": "3"}
+        ]
+    
+    return jsonify(groups)

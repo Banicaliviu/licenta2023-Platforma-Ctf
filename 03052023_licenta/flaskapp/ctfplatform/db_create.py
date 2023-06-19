@@ -1,7 +1,8 @@
 from ctfplatform.kubernetes_interactions import get_db_connection
 from ctfplatform.utils import append_new_line
+from werkzeug.security import generate_password_hash
 
-# Comment out DROP statements from any related to releases
+########################USERS & GROUPS tables################
 def user_table(conn, cur):
     try:
         # cur.execute('DROP TABLE IF EXISTS UserTable;')
@@ -16,15 +17,18 @@ def user_table(conn, cur):
             ");"
         )
 
+        password = "admin"
+        hashed_password = generate_password_hash(password)
         cur.execute(
             "INSERT INTO UserTable (email, password, username, role) "
             "VALUES (%s, %s, %s, %s);",
-            ("admin@gmail.com", "admin", "admin", "admin"),
+            ("admin@gmail.com", hashed_password, "admin", "admin"),
         )
 
         conn.commit()
     except Exception as e:
         append_new_line("logs.txt", "Error user table: {}".format(e))
+        conn.rollback()
 
 
 def usertogroup_table(conn, cur):
@@ -40,6 +44,7 @@ def usertogroup_table(conn, cur):
         conn.commit()
     except Exception as e:
         append_new_line("logs.txt", "Error jeopardy category table: {}".format(e))
+        conn.rollback()
 
 
 def group_table(conn, cur):
@@ -53,70 +58,10 @@ def group_table(conn, cur):
         conn.commit()
     except Exception as e:
         append_new_line("logs.txt", "Error jeopardy category table: {}".format(e))
+        conn.rollback()
 
-
-# from here
-def jeopardycategory_table(conn, cur):
-    try:
-        # cur.execute('DROP TABLE jeopardycategorytable CASCADE;')
-        # conn.commit()
-        cur.execute(
-            "CREATE TABLE jeopardycategorytable ("
-            "id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,"
-            "category VARCHAR(150) NOT NULL"
-            ");"
-        )
-        conn.commit()
-    except Exception as e:
-        append_new_line("logs.txt", "Error jeopardy category table: {}".format(e))
-
-
-def jeopardyexercise_table(conn, cur):
-    try:
-        # cur.execute('DROP TABLE jeopardyexercisetable CASCADE;')
-        # conn.commit()
-        cur.execute(
-            "CREATE TABLE jeopardyexercisetable ("
-            "id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,"
-            "title VARCHAR(150) NOT NULL,"
-            "description VARCHAR(600) NOT NULL,"
-            "difficulty VARCHAR(10) NOT NULL,"
-            "id_category INTEGER NOT NULL,"
-            "score_if_completed VARCHAR(10) NOT NULL,"
-            "flag VARCHAR(150) NOT NULL,"
-            "pod_status VARCHAR(50) NOT NULL,"
-            "FOREIGN KEY (id_category) REFERENCES jeopardycategorytable(id)"
-            ");"
-        )
-        conn.commit()
-    except Exception as e:
-        append_new_line("logs.txt", "Error jeopardy exercise table: {}".format(e))
-
-
-def jeopardyuserhistory_table(conn, cur):
-    try:
-        # cur.execute('DROP TABLE jeopardyuserhistorytable;')
-        # conn.commit()
-        cur.execute(
-            "CREATE TABLE jeopardyuserhistorytable ("
-            "id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,"
-            "id_jepardyexercise INTEGER NOT NULL,"
-            "id_user INTEGER NOT NULL,"
-            "date_completed DATE DEFAULT CURRENT_TIMESTAMP,"
-            "FOREIGN KEY (id_user) REFERENCES usertable(id),"
-            "FOREIGN KEY (id_jepardyexercise) REFERENCES jeopardyexercisetable(id)"
-            ");"
-        )
-        conn.commit()
-    except Exception as e:
-        append_new_line("logs.txt", "Error : {}".format(e))
-
-
-# to here
 
 #############RELEASES tables###############
-
-
 def releasestable(conn, cur):
     try:
         cur.execute(
@@ -135,6 +80,7 @@ def releasestable(conn, cur):
         conn.commit()
     except Exception as e:
         append_new_line("logs.txt", "Error releasestable table: {}".format(e))
+        conn.rollback()
 
 
 def releasestousertable(conn, cur):
@@ -150,6 +96,7 @@ def releasestousertable(conn, cur):
         conn.commit()
     except Exception as e:
         append_new_line("logs.txt", "Error releasestousertable table: {}".format(e))
+        conn.rollback()
 
 
 def releasetogrouptable(conn, cur):
@@ -165,11 +112,10 @@ def releasetogrouptable(conn, cur):
         conn.commit()
     except Exception as e:
         append_new_line("logs.txt", "Error releasetogrouptable table: {}".format(e))
+        conn.rollback()
 
 
 ###################IMAGES tables#############
-
-
 def imagestable(conn, cur):
     try:
         cur.execute(
@@ -184,6 +130,7 @@ def imagestable(conn, cur):
         conn.commit()
     except Exception as e:
         append_new_line("logs.txt", "Error imagestable table: {}".format(e))
+        conn.rollback()
 
 
 def imagestoreleasetable(conn, cur):
@@ -198,9 +145,127 @@ def imagestoreleasetable(conn, cur):
         )
         conn.commit()
     except Exception as e:
-        append_new_line("logs.txt", "Error imagestoreleasetable table: {}".format(e))
+        append_new_line("logs.txt", "Error imagestoreleasetable: {}".format(e))
+        conn.rollback()
+        
+def imagestomanifesttable(conn, cur):
+    try:
+        cur.execute(
+            "CREATE TABLE imagestomanifesttable ("
+            "id_image INTEGER NOT NULL,"
+            "id_manifest INTEGER NOT NULL,"
+            "FOREIGN KEY (id_image) REFERENCES imagestable(id),"
+            "FOREIGN KEY (id_manifest) REFERENCES manifeststable(id)"
+            ");"
+        )
+        conn.commit()
+    except Exception as e:
+        append_new_line("logs.txt", "Error imagestomanifesttable: {}".format(e))
+        conn.rollback()
 
+#######################Kubernetes MANIFESTS tables##########
+def manifeststable(conn, cur):
+    try:
+        cur.execute(
+            "CREATE TABLE manifeststable ("
+            "id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,"
+            "name VARCHAR(150) NOT NULL,"
+            "imageName VARCHAR(150) NOT NULL,"
+            "deployment_file_path VARCHAR(150) NOT NULL,"
+            "service_file_path VARCHAR(150) NOT NULL,"
+            "namespace_file_path VARCHAR(150) NOT NULL,"
+            "replicas INTEGER NOT NULL,"
+            "status VARCHAR(30) NOT NULL,"
+            "nodePort INTEGER NOT NULL,"
+            "fullUrl VARCHAR(50) NOT NULL"
+            ");"
+        )
+        conn.commit()
+    except Exception as e:
+        append_new_line("logs.txt", "Error manifeststable: {}".format(e))
+        conn.rollback()
 
+#######################JEOPARDYS tables##########
+
+def jeopardystable(conn, cur):
+    try:
+        cur.execute(
+            "CREATE TABLE jeopardystable ("
+            "id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,"
+            "name VARCHAR(150) NOT NULL,"
+            "description VARCHAR(300) NOT NULL,"
+            "status VARCHAR(30) NOT NULL,"
+            "fullUrl VARCHAR(150) NOT NULL,"
+            "flag VARCHAR(150) NOT NULL,"
+            "score INTEGER NOT NULL"
+            ");"
+        )
+        conn.commit()
+    except Exception as e:
+        append_new_line("logs.txt", "Error jeopardystable: {}".format(e))
+        conn.rollback()
+
+def jeopardytoreleasetable(conn, cur):
+    try:
+        cur.execute(
+            "CREATE TABLE jeopardytoreleasetable ("
+            "id_jeopardy INTEGER NOT NULL,"
+            "id_release INTEGER NOT NULL,"
+            "FOREIGN KEY (id_jeopardy) REFERENCES jeopardystable(id),"
+            "FOREIGN KEY (id_release) REFERENCES releasestable(id)"
+            ");"
+        )
+        conn.commit()
+    except Exception as e:
+        append_new_line("logs.txt", "Error jeopardytoreleasetable: {}".format(e))
+        conn.rollback()
+    
+def jeopardytomanifesttable(conn, cur):
+    try:
+        cur.execute(
+            "CREATE TABLE jeopardytomanifesttable ("
+            "id_jeopardy INTEGER NOT NULL,"
+            "id_manifest INTEGER NOT NULL,"
+            "FOREIGN KEY (id_jeopardy) REFERENCES jeopardystable(id),"
+            "FOREIGN KEY (id_manifest) REFERENCES manifeststable(id)"
+            ");"
+        )
+        conn.commit()
+    except Exception as e:
+        append_new_line("logs.txt", "Error jeopardytomanifesttable: {}".format(e))
+        conn.rollback()
+
+def jeopardytousertable(conn, cur):
+    try:
+        cur.execute(
+            "CREATE TABLE jeopardytousertable ("
+            "id_jeopardy INTEGER NOT NULL,"
+            "id_user INTEGER NOT NULL,"
+            "FOREIGN KEY (id_jeopardy) REFERENCES jeopardystable(id),"
+            "FOREIGN KEY (id_user) REFERENCES usertable(id)"
+            ");"
+        )
+        conn.commit()
+    except Exception as e:
+        append_new_line("logs.txt", "Error jeopardytousertable: {}".format(e))
+        conn.rollback()
+
+def jeopardytogrouptable(conn, cur):
+    try:
+        cur.execute(
+            "CREATE TABLE jeopardytogrouptable ("
+            "id_jeopardy INTEGER NOT NULL,"
+            "id_group INTEGER NOT NULL,"
+            "FOREIGN KEY (id_jeopardy) REFERENCES jeopardystable(id),"
+            "FOREIGN KEY (id_group) REFERENCES grouptable(id)"
+            ");"
+        )
+        conn.commit()
+    except Exception as e:
+        append_new_line("logs.txt", "Error jeopardytogrouptable: {}".format(e))
+        conn.rollback()
+
+###
 def create_db():
     try:
         conn = get_db_connection()
@@ -236,58 +301,21 @@ def create_db():
             append_new_line("logs.txt", "usertogrouptable successfully created !")
         else:
             append_new_line("logs.txt", "usertogrouptable already exists!")
-        # Delete from here
-        # creation of jeopardy category table
-        cur.execute(
-            "SELECT count(*) FROM information_schema.tables WHERE table_name='jeopardycategorytable';"
-        )
-        result = cur.fetchone()
-        if result[0] == 0:
-            # jeopardycategory_table(conn, cur)
-            append_new_line(
-                "logs.txt", "jeopardycategorytable table successfully created !"
-            )
-        else:
-            # Use below execute command to drop all jeopardy tables(1)
-            cur.execute("DROP TABLE jeopardycategorytable CASCADE;")
-            conn.commit()
-            # jeopardycategory_table(conn, cur)
-            append_new_line("logs.txt", "jeopardycategorytable deleted successfuly!")
 
-        # creation of jeopardy exercise table
-        cur.execute(
-            "SELECT count(*) FROM information_schema.tables WHERE table_name='jeopardyexercisetable';"
-        )
-        result = cur.fetchone()
-        if result[0] == 0:
-            # jeopardyexercise_table(conn, cur)
-            append_new_line(
-                "logs.txt", "jeopardyexercisetable table successfully created !"
-            )
-        else:
-            # Use below execute command to drop all jeopardy tables(2)
-            cur.execute("DROP TABLE jeopardyexercisetable  CASCADE;")
-            conn.commit()
-            # jeopardyexercise_table(conn, cur)
-            append_new_line(
-                "logs.txt", "jeopardyexercisetable table deleted successfuly!"
-            )
+        ################### MANIFESTS
 
-        # creation of jeopardy user history table
         cur.execute(
-            "SELECT count(*) FROM information_schema.tables WHERE table_name='jeopardyuserhistorytable';"
+            "SELECT count(*) FROM information_schema.tables WHERE table_name='manifeststable';"
         )
         result = cur.fetchone()
         if result[0] == 0:
-            # jeopardyuserhistory_table(conn, cur)
-            append_new_line(
-                "logs.txt", "jeopardyuserhistorytable table successfully created !"
-            )
+            manifeststable(conn, cur)
+            append_new_line("logs.txt", "manifeststable table successfully created !")
         else:
-            cur.execute("DROP TABLE jeopardyuserhistorytable  CASCADE;")
-            conn.commit()
-            append_new_line("logs.txt", "jeopardyuserhistorytable deleted successfuly!")
-        # to here
+            # cur.execute("DROP TABLE releasestable  CASCADE;")
+            # conn.commit()
+            append_new_line("logs.txt", "manifeststable table already exists!")
+
         ################### RELEASES
         # creation of releases table
         cur.execute(
@@ -298,8 +326,8 @@ def create_db():
             releasestable(conn, cur)
             append_new_line("logs.txt", "releasestable table successfully created !")
         else:
-            cur.execute("DROP TABLE releasestable  CASCADE;")
-            conn.commit()
+            # cur.execute("DROP TABLE releasestable  CASCADE;")
+            # conn.commit()
             append_new_line("logs.txt", "releasestable table already exists!")
 
         # creation of releases to user table
@@ -313,8 +341,8 @@ def create_db():
                 "logs.txt", "releasestousertable table successfully created !"
             )
         else:
-            cur.execute("DROP TABLE releasestousertable  CASCADE;")
-            conn.commit()
+            # cur.execute("DROP TABLE releasestousertable  CASCADE;")
+            # conn.commit()
             append_new_line("logs.txt", "releasestousertable table already exists!")
 
         # creation of releases to group table
@@ -328,8 +356,8 @@ def create_db():
                 "logs.txt", "releasetogrouptable table successfully created !"
             )
         else:
-            cur.execute("DROP TABLE releasetogrouptable  CASCADE;")
-            conn.commit()
+            # cur.execute("DROP TABLE releasetogrouptable  CASCADE;")
+            # conn.commit()
             append_new_line("logs.txt", "releasetogrouptable table already exists!")
 
         ################ IMAGES
@@ -359,11 +387,103 @@ def create_db():
             # cur.execute("DROP TABLE imagestable  CASCADE;")
             # conn.commit()
             append_new_line("logs.txt", "imagestoreleasetable table already exists!")
+        #creation of images to manifest table    
+        cur.execute(
+            "SELECT count(*) FROM information_schema.tables WHERE table_name='imagestomanifesttable';"
+        )
+        result = cur.fetchone()
+        if result[0] == 0:
+            imagestomanifesttable(conn, cur)
+            append_new_line(
+                "logs.txt", "imagestomanifesttable table successfully created !"
+            )
+        else:
+            # cur.execute("DROP TABLE imagestable  CASCADE;")
+            # conn.commit()
+            append_new_line("logs.txt", "imagestomanifesttable table already exists!")
+        
+        ################JEOPARDYS
+        #creation of jeopardys table
+        conn.rollback()
+        cur.execute(
+            "SELECT count(*) FROM information_schema.tables WHERE table_name='jeopardystable';"
+        )
+        result = cur.fetchone()
+        if result[0] == 0:
+            jeopardystable(conn, cur)
+            append_new_line(
+                "logs.txt", "jeopardystable table successfully created !"
+            )
+        else:
+            # cur.execute("DROP TABLE jeopardystable  CASCADE;")
+            # conn.commit()
+            append_new_line("logs.txt", "jeopardystable table already exists!")
+        
+        #creation of jeopardy to release table
+        cur.execute(
+            "SELECT count(*) FROM information_schema.tables WHERE table_name='jeopardytoreleasetable';"
+        )
+        result = cur.fetchone()
+        if result[0] == 0:
+            jeopardytoreleasetable(conn, cur)
+            append_new_line(
+                "logs.txt", "jeopardytoreleasetable table successfully created !"
+            )
+        else:
+            # cur.execute("DROP TABLE jeopardystable  CASCADE;")
+            # conn.commit()
+            append_new_line("logs.txt", "jeopardytoreleasetable table already exists!")
 
+        #creation of jeopardy to manifest table
+        cur.execute(
+            "SELECT count(*) FROM information_schema.tables WHERE table_name='jeopardytomanifesttable';"
+        )
+        result = cur.fetchone()
+        if result[0] == 0:
+            jeopardytomanifesttable(conn, cur)
+            append_new_line(
+                "logs.txt", "jeopardytomanifesttable table successfully created !"
+            )
+        else:
+            # cur.execute("DROP TABLE jeopardystable  CASCADE;")
+            # conn.commit()
+            append_new_line("logs.txt", "jeopardytomanifesttable table already exists!")
+
+        #creation of jeopardy to user table
+        cur.execute(
+            "SELECT count(*) FROM information_schema.tables WHERE table_name='jeopardytousertable';"
+        )
+        result = cur.fetchone()
+        if result[0] == 0:
+            jeopardytousertable(conn, cur)
+            append_new_line(
+                "logs.txt", "jeopardytousertable  successfully created !"
+            )
+        else:
+            # cur.execute("DROP TABLE jeopardystable  CASCADE;")
+            # conn.commit()
+            append_new_line("logs.txt", "jeopardytousertable table already exists!")
+
+        #creation of jeopardy to group table
+        cur.execute(
+            "SELECT count(*) FROM information_schema.tables WHERE table_name='jeopardytogrouptable';"
+        )
+        result = cur.fetchone()
+        if result[0] == 0:
+            jeopardytogrouptable(conn, cur)
+            append_new_line(
+                "logs.txt", "jeopardytogrouptable  successfully created !"
+            )
+        else:
+            # cur.execute("DROP TABLE jeopardystable  CASCADE;")
+            # conn.commit()
+            append_new_line("logs.txt", "jeopardytogrouptable table already exists!")
+        
+        ###
         cur.close()
     except Exception as e:
         append_new_line("logs.txt", "Error : {}".format(e))
-        raise e
+        conn.rollback()
     finally:
         if conn:
             conn.close()

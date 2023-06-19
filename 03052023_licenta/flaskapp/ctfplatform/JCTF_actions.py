@@ -5,11 +5,18 @@ from ctfplatform.JCTF_backend import (
     helm_push,
     helm_list_chartmuseum,
     helm_delete,
-    helm_uninstall
+    helm_uninstall,
+    parse_dockerfile,
+    create_kube_manifests,
+    add_image,
+    is_image_in_repository,
+    get_image_digest
+    #add_kaniko_context_to_template,
+    #start_kaniko
 )
 from ctfplatform.db_actions import (
     get_jeopardyexercise_where_id,
-    get_jeopardyexercises_list,
+    get_jeopardyexercises_list
 )
 from ctfplatform.utils import append_new_line, format_timestamp
 import datetime
@@ -58,9 +65,73 @@ def get_relevant_info(releases):
             )
 
     return relevant_info
+def verify_image(imageName_tag, digest):
+    try:
+        if is_image_in_repository(imageName_tag):
+            append_new_line(
+                    "logs.txt",
+                    f"Image {imageName_tag} found in ctfplatform's private registry repository"
+                )
+            image_digest_from_repository = get_image_digest(imageName_tag)
+            append_new_line(
+                    "logs.txt",
+                    f"Comparing to {digest}..."
+                )
+            if digest == image_digest_from_repository:
+                append_new_line(
+                    "logs.txt",
+                    f"Image's {imageName_tag} content successfully verified."
+                )
+                return True
+            else:
+                raise Exception("Digest values differ")
+        else:
+            raise Exception(f"Image {imageName_tag} not found in private repository")
+    except Exception as e:
+        append_new_line(
+                    "logs.txt",
+                    f"{e}"
+                )
+        return False
+def create_JeopardyExercise_dockerfile(ctf_name, flag, score, dockerfile_path, imageName_tag, digest, username):
+    fullUrl = None
+    try:
+        append_new_line(
+            "logs.txt",
+            f"Parsing Dockerfile..."
+        )
+        targetPort = parse_dockerfile(dockerfile_path)
+        if targetPort != None:
+            append_new_line(
+            "logs.txt",
+            f"Port exposed by Dockerfile is {targetPort}"
+        )
+            res = create_kube_manifests(ctf_name, targetPort, imageName_tag, username)
+            if res == True: 
+                append_new_line(
+                "logs.txt",
+                f"Manifests created successfully"
+                )
+            else:
+                append_new_line(
+                "logs.txt",
+                f"Error creating manifests from templates"
+                )
+                return False
+        else: 
+            append_new_line(
+            "logs.txt",
+            f"Cannot find EXPOSE <portValue> or --port <portValue> inside Dockerfile provided.Cannot create manifest files."
+            )
+            return False
+
+        res = add_image(ctf_name, flag, score, imageName_tag, digest, fullUrl)
+        return res
+    except Exception as e:
+        return False
 
 
-def create_JeopardyExercise_helmchart(ctf_name, flag, helm_package_path):
+def create_JeopardyExercise_helmchart(ctf_name, flag, score, helm_package_path):
     try:
         
         append_new_line(
