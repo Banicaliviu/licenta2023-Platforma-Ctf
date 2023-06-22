@@ -1,0 +1,17 @@
+namespace: ctfspace
+serviceAccount: ctfplatformsa
+
+deployment:
+ name: chartmuseum
+ imageName: chartmuseum/chartmuseum:latest
+ 
+service:
+ name: chartmuseum-service
+ 
+pv:
+ name: chartmuseum-pv
+ storage: 1Gi
+pvc:
+ name: chartmuseum-pvc
+ storage: 1Gi
+

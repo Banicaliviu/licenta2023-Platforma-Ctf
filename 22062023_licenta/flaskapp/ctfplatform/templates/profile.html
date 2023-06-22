@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">
+  Hello {{ username }}!
+</h1>
+<div class="score">
+  Score: <span class="score-number" style="color: green;">{{ score }}</span>
+</div>
+<div class="tabs">
+  <ul>
+    <li><a href="#security-info">Security Information</a></li>
+    <li><a href="#user-history">User History</a></li>
+  </ul>
+
+  <div id="security-info">
+  </div>
+
+  <div id="user-history">
+    {% if ctfs %}
+      {% for ctf in ctfs %}
+        <div class="ctf-box">
+          <div class="ctf-title">{{ ctf.title }}</div>
+          <div class="ctf-difficulty">Difficulty: {{ ctf.difficulty }}</div>
+          <div class="ctf-status" style="color: green;">Completed</div>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

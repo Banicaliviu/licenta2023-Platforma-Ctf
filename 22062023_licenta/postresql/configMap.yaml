@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: ctfspace
+  labels:
+    app: postgres
+data:
+  POSTGRES_DB: ctfplatformdb
+  POSTGRES_USER: admin
+  POSTGRES_PASSWORD: admin

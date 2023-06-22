@@ -1,0 +1,40 @@
+TO DO list : 
+###### Next push ######
+-> Image registry pod
+--> Admins will submit a helm link for creating an exercise, the image within will be stored and used from image registry rather than dockerhub(faster push-pulling)
+-> Integrate keycloak
+--> Advanced user and group management
+--> Security reasons
+FRONTEND :
+
+
+BACKEND :
+
+
+###### Second push ######(no)
+-> Add GatewayClass, Gateways and Routes resources to the cluster for cross-namespace routing.
+--> See Mozzila bookmarks(4 articles)
+
+DONE list : 
+-> Implement Login page
+-> Create a new file db_create.py.Design and implement tables for CTF exercises.
+-> Add Kubernetes API
+
+FRONTEND :
+-> Implement a CTF exercise model.Implement the file play_jeopardy.html.
+    It displays details of selected CTF, its connection string and an input text area for flag submition.(1/2)
+--> Next thing to do is the flag sumbtition input area
+-> Implement minimalistic profile page, it will display the following: 
+    username, a table with the ctfs the he completed and a table with how many 1-star, 2-star, 3-star.. ctfs he did
+
+BACKEND :
+-> Implement the backend for flag submition, validation, scoring
+
+DATABASE:
+-> Tables that need to be created
+--> jeopardyCategories : name(web, crypto, foresincs)
+--> jeopardyExercise with columns : title, description, difficulty, id_type(foreign key), score_if_completed(same as difficulty), flag(digested)
+--> jeopardyUserhistory with columns : id, id_jeopardyexercise(foreign key), id_user(foreign key), date_added,
+
+Minimal bugs still on:
+-> *Minimal bug: still a bug when displaying the jeopardy ctf title, fix later*

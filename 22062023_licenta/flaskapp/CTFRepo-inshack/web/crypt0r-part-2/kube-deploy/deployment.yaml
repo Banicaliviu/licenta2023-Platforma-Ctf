@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctf-web-cypt0r-part-2-deployment
+  namespace: ctfspace
+  labels:
+    app: ctf-web-cypt0r-part-2-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ctf-web-cypt0r-part-2-deployment
+  template:
+    metadata:
+      labels:
+        app: ctf-web-cypt0r-part-2-deployment
+    spec:
+      containers:
+      - name: ctf-web-cypt0r-part-2-deployment
+        image: liviubanica/ctf-web-cypt0r-part-2:1
+        ports:
+        - containerPort: 5000
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+

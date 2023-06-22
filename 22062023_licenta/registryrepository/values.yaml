@@ -1,0 +1,21 @@
+namespace: ctfspace
+serviceAccount: ctfplatformsa
+
+deployment:
+  name: registryrepository-deployment
+  imageName: registry:2.8.1
+
+service:
+  name: registryrepository-service
+
+pv:
+  name: registryrepository-pv
+  storage: 1Gi
+
+pvc:
+  name: registryrepository-pvc
+  storage: 1Gi
+
+nginx:
+  maxRequestBodySize: 800m
+

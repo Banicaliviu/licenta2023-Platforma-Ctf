@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <TBD_NAME>
+  labels:
+    app: <TBD_NAME>
+  namespace: <TBD_NAME>
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: <TBD_NAME>
+  template:
+    metadata:
+      labels:
+        app: <TBD_NAME>
+    spec:
+      containers:
+      - name: <TBD_NAME>
+        image: <TBD_IMAGE>
+        imagePullPolicy: Always
+        imagePullSecrets:
+        - name: privateregcred
+        ports:
+          - name: http
+            containerPort: <TBD_PORT>
+

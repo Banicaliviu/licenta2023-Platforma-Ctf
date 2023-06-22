@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ctf-web-crimemail-service
+  namespace: ctfspace
+spec:
+  selector:
+    app: ctf-web-crimemail-deployment
+  type: NodePort
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+

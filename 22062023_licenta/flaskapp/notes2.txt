@@ -1,0 +1,34 @@
+think of docker image registry
+there has to be a docker image push form so the user can push an image to local registry
+the chart installs it and kubernetes has to apply the image taken from local registry 
+
+what to do:
+frontend 
+add a new page add_jeopardy_exercise_toplatform.html where the user has to complete the same fields plus 1, the docker image field
+( add a note there too suggesting the user that he can add an image to ctfplatform's image registry )
+add a new page Images where the user can see the images from the local repository, he can add an image, delete, update, delete all
+update: 
+    add_jeopardy_exercise will be for charts which have their image on an online hub, add score field
+
+backend
+the discussion is: the user has 2 choices:
+--For add_jeopardy_exercise_toplatform.html
+-> he can push the image to local image registry:
+===> The server has to create imagetable
+===> The server has to store imageName,imageTag, fullUrl, inUseBy, CreatedAt, Score, Flag
+!*Remember to always update inUseBy when a deployment starts/stops using the image*!
+===> The server has to push the image to local registry and wait for success response ( if not alert the user of failure )
+===> The chart has to only contain the imageName:imageTag as image ( announce the user )
+===> The server has to append the local registry tag to chart imageName before installing it
+
+
+--For images.html --
+===> The server has to get image relevant info from the db and populate Image's page
+===> The server has to be able to delete/delete_all an image/images from image registry 
+===> The server is already able to push an new image( add )
+===> The server has to be able to update an image ( replace the old with the new )
+
+-> he install the chart directly, using an online image 
+===> The server has to store imageName,imageTag, fullUrl, inUseBy, Created, Score
+!*Remember to always update inUseBy when a deployment starts/stops using the image*!
+

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: postgres
+  name: postgres
+  namespace: ctfspace
+spec:
+  type: ClusterIP
+  ports:
+  - name: postgres
+    port: 5432
+  selector:
+    service: postgres

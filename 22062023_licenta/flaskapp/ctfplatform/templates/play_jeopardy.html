@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1 class="title">
+    About {{ jeopardyName }}
+  </h1>
+  <div>
+    <p>{{ jeopardyDescription }}</p>
+    <p>Difficulty: {{ jeopardyStatus }}</p>
+  </div>
+  <h2>Instructions on how to connect</h2>
+  <p>Follow these steps to connect to the CTF platform:</p>
+  <ol>
+    <li>Step 1: [Insert instructions here]</li>
+    <li>Step 2: [Insert instructions here]</li>
+    <li>Step 3: [Insert instructions here]</li>
+  </ol>
+  <p>Connection string: --EMPTY--</p>
+  <form method="post">
+    <label for="flag-input">Enter your flag here: </label>
+    <input type="text" id="flag-input" name="flag" maxlength="512" size="60">
+    <button type="submit" style="background-color: green; color: white;">Submit</button>
+  </form>
+
+{% endblock %}

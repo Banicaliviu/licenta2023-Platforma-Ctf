@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctf-web-crimemail-deployment
+  namespace: ctfspace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ctf-crimemail
+  template:
+    metadata:
+      labels:
+        app: ctf-crimemail
+    spec:
+      containers:
+      - name: ctf-crimemail
+        image: liviubanica/ctf-crimemail:latest
+        ports:
+        - containerPort: 80

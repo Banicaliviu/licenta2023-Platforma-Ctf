@@ -1,0 +1,56 @@
+.exercise-box {
+  position: relative;
+  height: 100%;
+  background-color: grey;
+}
+
+.exercise-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.exercise-title {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exercise-description {
+  flex-grow: 1;
+  display: none;
+}
+
+.exercise-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.exercise-actions .subtitle {
+  margin-left: 1rem;
+}
+
+.exercise-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+.exercise-box:hover .exercise-overlay {
+  display: none;
+}
+
+.exercise-box:hover .exercise-description {
+  display: block;
+}
+
+.has-text-black {
+  color: black;
+}

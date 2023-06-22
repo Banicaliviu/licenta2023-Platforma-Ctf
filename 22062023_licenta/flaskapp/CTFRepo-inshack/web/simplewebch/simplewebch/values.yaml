@@ -1,0 +1,16 @@
+namespace: simplewebch
+
+deployment:
+ name: ctf-web-simplewebch-deployment
+ port: 2640
+ imageName: liviubanica/ctf-web-simplewebch:1
+ replicas: 2
+
+service:
+ name: ctf-web-simplewebch-service
+ type: NodePort
+ port: 30080
+ targetPort: 2640
+ selector: 
+  app: ctf-web-simplewebch-deployment
+
