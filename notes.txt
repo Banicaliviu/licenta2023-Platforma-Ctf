@@ -1,0 +1,56 @@
+## command to activate python environment ##
+	source env/bin/activate
+
+
+## command to kill all processes listening to port 80	##
+	sudo kill -9 `sudo lsof -t -i:80` 
+ 
+ 
+ File "/etc/docker/daemon.json" does not exist. 
+You should create it and add the following lines: 
+{
+    "insecure-registries" : ["localhost:32000"] 
+}
+
+kubectl exec -it pod/postgres-5bb9d69b96-j7rhd -n ctfspace -- env PGPASSWORD=admin psql -U admin --dbname ctfplatformdb --command "select * from jeopardyexercisetable"
+
+
+docker repository : 
+username : liviubanica
+password : Marian2024liviu
+
+#vor fi 2 containere per CTF : unul va fi server-ul vulnerabil si celalalt mediul de lucru.(te gandeai cum sa realizezi baza de date)
+#cauta cum se face relatia de foreign key aici.
+#tabelul ctfexercise va contine imaginea containerului server al exercitiului, iar tabelul ctfexercisecontainer la id-ul aceleasi imaginii se va gasii imaginea containerului 
+#ce simuleaza mediul de lucru
+#
+# request_id = db.Column(db.Integer, db.ForeignKey('request.id'))
+#request = db.relationship("Request", backref=backref("request", uselist=False))
+
+## command to check ssh identities 
+ssh-add -L
+## command to add ssh priv key
+
+##command to delete image from private docker registry (update per use case)
+curl -v -sSL -X DELETE -H "Accept: application/vnd.docker.distribution.manifest.v2+json" {private-docker-registry-url}/v2/{image-name}/manifests/"{sha256:{digest-value}}"
+digest-value = docker push digest value 
+
+##command to check digest
+curl -v -sSL -I -H "Accept: application/vnd.docker.distribution.manifest.v2+json" 172.17.0.13:5000/v2/liviubanica/ctf-web-simplewebch/manifests/1
+
+value to check :
+Docker-Content-Digest: sha256:dbe4caa2cf78ee794b4c8935db850bd312c2027732dff06bce2744f4364a636b
+
+##command to delete first validating web hook( fails ) 
+kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
+
+##command to install docker-registry chart from phtom
+helm install private-registry phntom/docker-registry -f docker-registry/values.yaml -n ctfspace
+
+##command to install chartmuseum 
+helm install chartmuseum chartmuseum/
+
+foloseste endpoint-ul intern al docker-registry 
+
+##command to create regcred secret based on config.json
+kubectl create secret generic regcred -n ctfspace --from-file=.dockerconfigjson=/home/liviubanica/.docker/config.json --type=kubernetes.io/dockerconfigjson
