@@ -21,12 +21,12 @@ from ctfplatform.JCTF_actions import (
     get_jctf_list,
     update_jctfs_status,
     authorize_users,
-    rollout_release,
     apply_release,
     delete_release,
     uninstall_release,
     get_jctf_id,
     verify_image,
+    mark_chart
 )
 from ctfplatform.main_actions import init, update_profile, new_group
 from werkzeug.utils import secure_filename
@@ -153,20 +153,17 @@ def add_jeopardy_exercise_helm_chart():
 @main_bp.route("/releases", methods=["GET", "POST"])
 def releases():
     if request.method == "POST":
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            data = request.get_json()
-            release_name = data.get("release-name")
-            release_version = data.get("release-version")
-            action = data.get("action")
-        else:
-            release_name = request.form.get("release-name")
-            release_version = request.form.get("release-version")
-            action = request.form.get("action")
+        release_name = request.form.get("release-name")
+        release_version = request.form.get("release-version")
+        action = request.form.get("action")
 
         if release_name:
             if action == "authorize_users":
                 return redirect(url_for("main.authorize_users"))
-
+            
+            elif action == "authorize_group":
+                return redirect(url_for("main.authorize_group"))
+            
             elif action == "delete_release":
                 form_release_name = request.form.get("release-name")
                 form_release_version = request.form.get("release-version")
@@ -178,40 +175,34 @@ def releases():
                 else:
                     flash(f"Failed to delete release '{release_name}'.", "error")
 
-            elif action == "rollout":
-                result = rollout_release(release_name)
-                if result:
-                    flash(f"Rollout initiated for release '{release_name}'.", "success")
-                else:
-                    flash(
-                        f"Failed to initiate rollout for release '{release_name}'.",
-                        "error",
-                    )
-
             elif action == "apply_release":
                 result = apply_release(release_name, release_version)
                 if result == 0:
                     flash(
                         f"Release '{release_name}' installed successfully.", "success"
                     )
-                    return jsonify(success=True)
+                    mark_chart(release_name, "True")
+                    releases = get_helm_releases()
+                    return render_template("releases.html", releases=releases)
                 else:
                     flash(f"Failed to install release '{release_name}'.", "error")
-
-                    return jsonify(success=False)
+                    return render_template("releases.html", releases=releases)
 
             elif action == "uninstall_release":
                 result = uninstall_release(release_name, release_version)
-                if result:
+                if result == 0:
                     flash(
                         f"Release '{release_name}' uninstalled successfully.", "success"
                     )
-
-                    return jsonify(success=True)
+                    mark_chart(release_name, "False")
+                    releases = get_helm_releases()
+                    return render_template("releases.html", releases=releases)
                 else:
-                    flash(f"Failed to uninstall release '{release_name}'.", "error")
-
-                    return jsonify(success=False)
+                    flash(
+                        f"Couldn't uninstall '{release_name}'", "error"
+                    )
+                    releases = get_helm_releases()
+                    return render_template("releases.html", releases=releases)
 
             else:
                 flash("Invalid action selected.", "error")
@@ -259,26 +250,18 @@ def authorize_users():
 
     return render_template("authorize_users.html", users=users)
 
+@main_bp.route("/authorize_group", methods=["GET", "POST"])
+def authorize_group():
+    if request.method == "POST":
+        # Perform authorization logic here
+        flash("Group authorized.", "success")
+        return render_template("authorize_group.html", groups=groups)
 
-####Utility
-@main_bp.route("/get_users", methods=["GET"])
-def get_users():
-    users = [
-        {"email": "user1@example.com", "username": "user1", "group": "Group A"},
-        {"email": "user2@example.com", "username": "user2", "group": "Group B"},
-        {"email": "user3@example.com", "username": "user3", "group": "Group A"},
-        {"email": "user4@example.com", "username": "user4", "group": "Group C"},
-    ]
-
-    return jsonify(users)
-
-
-@main_bp.route("/get_groups", methods=["GET"])
-def get_groups():
+    # Fetch users from the database or any other data source
     groups = [
-        {"name": "group1", "members": "1"},
-        {"name": "C114A", "members": "2"},
-        {"name": "ueFrog", "members": "3"},
+        {"name": "Group A", "members": "10"},
+        {"name": "Group B", "members": "11"},
+        {"name": "Group C", "members": "12"}
     ]
 
-    return jsonify(groups)
+    return render_template("authorize_group.html", groups=groups)

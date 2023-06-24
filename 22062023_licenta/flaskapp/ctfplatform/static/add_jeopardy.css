@@ -1,10 +1,11 @@
 .container {
-    max-width: 400px;
+    display: grid;
+    grid-template-rows: 15% 15% 15% 25%;
     margin: 0 auto;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .form-control {
@@ -13,17 +14,6 @@
     font-size: 16px;
     border-radius: 5px;
     border: 1px solid #ccc;
-}
-
-.drag-drop-box {
-    border: 2px dashed #aaa;
-    padding: 20px;
-    text-align: center;
-    cursor: pointer;
-}
-
-.drag-drop-text {
-    color: #aaa;
 }
 
 .file-input {

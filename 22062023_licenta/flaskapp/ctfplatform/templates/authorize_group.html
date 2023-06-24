@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="title" id="page-title">
+    Authorize Group
+</h1>
+<div class="box" id="authorize-group-tab" style="display: none;">
+    <div class="field">
+      <label class="label">Search Group</label>
+      <div class="control">
+        <input class="input" type="text" id="search-group-field" placeholder="Enter group name">
+      </div>
+</div>
+<div class="container">
+    <div class="box">
+        <table class="table is-fullwidth">
+            <thead>
+            <tr>
+                <th>Group Name</th>
+                <th>Members</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="group-list">
+            {% for group in groups %}
+            <tr>
+                <td>{{ group["name"] }}</td>
+                <td>{{ group["members"] }}</td>
+                <td>
+                <div class="buttons">
+                    <form id="form" method="POST" action="{{ url_for('main.authorize_group') }}">
+                        {% if group["is_authorized"] == 'true' %}
+                            <button class="button is-success"  id="authorize_{{ group.name }}" type="submit" disabled>Save</button>
+                            <button class="button is-danger"  id="authorize_{{ group.name }}" type="submit" >Unauthorize</button>
+                        {% else %}
+                            <button class="button is-success"  id="authorize_{{ group.name }}" type="submit" >Save</button>
+                            <button class="button is-danger"  id="authorize_{{ group.name }}" type="submit" disabled>Unauthorize</button>
+                        {% endif %}
+                      </form>
+                </div>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <div class="buttons">
+            <a class="button is-danger" href="{{ url_for('main.releases') }}">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

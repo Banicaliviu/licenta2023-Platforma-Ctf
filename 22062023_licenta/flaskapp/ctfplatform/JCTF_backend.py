@@ -18,7 +18,6 @@ from ctfplatform.db_actions import (
     insert_kube_manifests,
 )
 from ctfplatform.classes import ReleaseObj, ImageObj
-from ctfplatform.docker_interactions import updateImageTag, docker_push, docker_pull
 
 import tarfile
 import yaml
@@ -565,10 +564,13 @@ def add_image_and_release(helm_package_path):
     chart_apiVersion = None
     chart_appVersion = None
     chart_type = None
+    append_new_line(
+                    "logs.txt", f"Retrieving release data'."
+    )
     with tarfile.open(helm_package_path, "r:gz") as tar:
         chart_files = [member for member in tar.getmembers() if member.isfile()]
         for chart_file in chart_files:
-            if chart_file.name.endswith("chart.yaml"):
+            if chart_file.name.endswith("Chart.yaml"):
                 chart_info = tar.extractfile(chart_file).read().decode("utf-8")
                 chart_data = yaml.safe_load(chart_info)
 
@@ -592,7 +594,9 @@ def add_image_and_release(helm_package_path):
                 deployment_name = deployment_info.get("name", deployment_name)
                 imageName = deployment_info.get("imageName", imageName)
                 port = service_info.get("port", port)
-
+                append_new_line(
+                    "logs.txt", f"All data retrieved successfully'."
+                )
                 ok = ok + 1
             if ok == 2:
                 release_inst = ReleaseObj(
@@ -604,5 +608,8 @@ def add_image_and_release(helm_package_path):
                     chart_appVersion,
                     chart_type,
                     installed,
+                )
+                append_new_line(
+                    "logs.txt", f"Inserting release data {release_inst.get_name()}, {release_inst.get_image_name()}, {release_inst.is_installed()}'."
                 )
                 insert_release(release_inst)

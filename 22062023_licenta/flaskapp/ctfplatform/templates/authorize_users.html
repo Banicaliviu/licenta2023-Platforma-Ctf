@@ -1,136 +1,52 @@
 {% extends "base.html" %}
-
 {% block content %}
-  <h1 class="title" id="page-title">
-    Authorize Users
-  </h1>
-  <div class="container">
-    <div class="tabs">
-      <ul>
-        <li class="tab is-active" data-tab="authorize-users-tab">
-          <a>Authorize Users</a>
-        </li>
-        <li class="tab" data-tab="authorize-group-tab">
-          <a>Authorize Group</a>
-        </li>        
-      </ul>
+<h1 class="title" id="page-title">
+  Authorize Users
+</h1>
+<div class="box" id="authorize-users-tab">
+  <div class="field">
+    <label class="label">Search User</label>
+    <div class="control">
+      <input class="input" type="text" id="search-user-field" placeholder="Enter username">
     </div>
-    <div class="box" id="authorize-users-tab">
-      <div class="field">
-        <label class="label">Search User</label>
-        <div class="control">
-          <input class="input" type="text" id="search-user-field" placeholder="Enter username">
-        </div>
-      </div>
+  </div>
+</div>
+  <div class="container">
+    <div class="box">
       <table class="table is-fullwidth">
         <thead>
           <tr>
-            <th>Email</th>
             <th>Username</th>
+            <th>Email</th>
             <th>Group</th>
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="user-list">
-          <!-- User list will be populated dynamically -->
-        </tbody>
-      </table>
-      <div class="buttons">
-        {% if user_authorized %}
-          <button class="button is-success"  href="{{ url_for('main.releases') }}" type="submit">Save</button>
-        {% endif %}
-        <a class="button is-danger" href="{{ url_for('main.releases') }}">Cancel</a>
-      </div>
-    </div>
-    <div class="box" id="authorize-group-tab" style="display: none;">
-      <div class="field">
-        <label class="label">Search Group</label>
-        <div class="control">
-          <input class="input" type="text" id="search-group-field" placeholder="Enter group name">
-        </div>
-      </div>
-      <table class="table is-fullwidth">
-        <thead>
+        <tbody>
+          {% for user in users %}
           <tr>
-            <th>Group Name</th>
-            <th>Members</th>
-            <th>Actions</th>
+            <td>{{ user["username"] }}</td>
+            <td>{{ user["email"] }}</td>
+            <td>{{ user["group"] }}</td>
+            <td>
+              <div class="buttons">
+                <form id="form" method="POST" action="{{ url_for('main.authorize_users') }}">
+                  {% if user["is_authorized"] == 'true' %}
+                    <button class="button is-success"  id="authorize_{{ user.username }}" type="submit" disabled>Save</button>
+                    <button class="button is-danger"  id="authorize_{{ user.username }}" type="submit" >Unauthorize</button>
+                  {% else %}
+                    <button class="button is-success"  id="authorize_{{ user.username }}" type="submit" >Save</button>
+                    <button class="button is-danger"  id="authorize_{{ user.username }}" type="submit" disabled>Unauthorize</button>
+                  {% endif %}
+                </form>
+            </div>
           </tr>
-        </thead>
-        <tbody id="group-list">
-          <!-- Group list will be populated dynamically -->
+          {% endfor %}
         </tbody>
       </table>
       <div class="buttons">
-        <button class="button is-success" id="group-save-button" style="display: none;">Save</button>
         <a class="button is-danger" href="{{ url_for('main.releases') }}">Cancel</a>
       </div>
     </div>
   </div>
-{% endblock %}
-
-{% block scripts %}
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script>
-    $(document).ready(function() {
-      // Sample user data (replace with your data source)
-      var groups = [
-        { name: "Group A", members: 5 },
-        { name: "Group B", members: 3 },
-        { name: "Group C", members: 8 }
-      ];
-
-      // Function to populate the user list based on search query
-      function populateUserList(users) {
-        var userList = $('#user-list');
-        userList.empty();
-
-        users.forEach(function(user) {
-          var row = '<tr>' +
-                      '<td>' + user.email + '</td>' +
-                      '<td>' + user.username + '</td>' +
-                      '<td>' + user.group + '</td>' +
-                      '<td><button class="button is-success authorize-button">Authorize</button></td>' +
-                    '</tr>';
-          userList.append(row);
-        });
-
-        // Filter users based on query
-        var filteredUsers = users.filter(function(user) {
-          return user.username.toLowerCase().includes(query.toLowerCase());
-        });
-
-        // Append user rows to the table
-        filteredUsers.forEach(function(user) {
-          var row = '<tr>' +
-                      '<td>' + user.email + '</td>' +
-                      '<td>' + user.username + '</td>' +
-                      '<td>' + user.group + '</td>' +
-                      '<td><button class="button is-success authorize-button">Authorize</button></td>' +
-                    '</tr>';
-          userList.append(row);
-        });
-      }
-
-      // Function to fetch users from the server
-      function fetchUsers() {
-        $.ajax({
-          url: "/get_users",
-          type: "GET",
-          success: function(response) {
-            var users = response.users;
-            console.log("Fetched users:", users); // Log the fetched users
-            populateUserList(users);
-          },
-          error: function(error) {
-            console.log("Error fetching users:", error);
-          }
-        });
-      }
-
-      fetchUsers();
-
-      // Rest of the code...
-    });
-  </script>
 {% endblock %}

@@ -20,22 +20,17 @@
                 <input type="text" id="flag" name="flag" required class="form-control">
             </div>
             <div class="form-group">
-                <label for="flag">Insert score here:</label>
+                <label for="score">Insert score here:</label>
                 <input type="number" id="score" name="score" required class="form-control">
             </div>
             <div class="form-group">
                 <label for="helm-package">Helm Package File (.tgz):</label>
-                <div class="drag-drop-box">
-                    <span class="drag-drop-text">Drag and drop .tgz file here</span>
-                    <input type="file" id="helm-package" name="helm-package" accept=".tgz" class="file-input">
-                </div>
+                <input type="file" id="helm-package" name="helm-package" accept=".tgz" class="file-input">
             </div>
 
             <button type="submit" class="btn btn-primary">Deploy CTF</button>
         </form>
     </div>
-    
-    <script src="{{ url_for('static', filename='drag_and_drop.js') }}"></script>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='add_jeopardy.css') }}">
 </body>
 {% endblock %}

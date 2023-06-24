@@ -1,6 +1,7 @@
 from ctfplatform.kubernetes_interactions import kube_interaction_inst, get_db_connection
 from ctfplatform.utils import append_new_line, format_timestamp
-
+from ctfplatform.classes import ReleaseObj
+from psycopg2 import OperationalError, errorcodes, errors
 
 ###########################################Inserts
 ###############GROUPS
@@ -26,13 +27,78 @@ def insert_group(groupname):
 
 ###############RELEASES
 
-
+def is_chart_installed(releaseName):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT installed FROM releasestable WHERE name = %s",
+            (releaseName,),
+        )
+        result = cur.fetchone()
+        append_new_line('logs.txt', f"Is chart installed? {result}")
+        return result
+    except Exception as e: 
+        Exception("Error while verifying whether release is installed")
+        raise e
+    
+def update_chartInstallationStatus(releaseName, newState):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """UPDATE releasestable
+            SET installed = %s WHERE name = %s""",
+            (newState, releaseName,),
+        )
+        result = cur.fetchone()
+        return result
+    except Exception as e:
+        Exception(f"Error updating release install state: {e}")
+        raise e 
+    
 def insert_release(releaseInfo):
-    append_new_line(
-        "logs.txt",
-        f"Release information retrieved: {releaseInfo.name}, {releaseInfo.version}, {releaseInfo.description}",
-    )
-    return True
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute(
+            "SELECT id FROM releasestable WHERE name = %s",
+            (releaseInfo.get_name(),),
+        )
+
+        result = cur.fetchone()
+        if result:
+            conn.close()
+            raise Exception(
+                "Cannot insert two releases with same name: {}".format(releaseInfo.get_name()),
+            )
+        else:
+            cur.execute(
+                "INSERT INTO releasestable (name, version, description, apiVersion, appVersion, type, installed)"
+                "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (
+                    releaseInfo.get_name(),
+                    releaseInfo.get_version(),
+                    releaseInfo.get_description(),
+                    releaseInfo.get_api_version(),
+                    releaseInfo.get_app_version(),
+                    releaseInfo.get_type(),
+                    releaseInfo.is_installed(),
+                ),
+            )
+            conn.commit()
+            append_new_line(
+                "logs.txt",
+                "Release added:\nName:{}\nImage name:{}\nInstalled:{}".format(
+                    releaseInfo.get_name(), releaseInfo.get_image_name(), releaseInfo.is_installed()
+                )
+            )
+            conn.close()
+    except Exception as e:
+        append_new_line("logs.txt", "Error inserting release: {}".format(e))
+        raise e
+    
 
 
 ###############MANIFESTS

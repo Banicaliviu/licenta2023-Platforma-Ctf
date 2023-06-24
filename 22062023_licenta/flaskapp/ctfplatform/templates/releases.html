@@ -28,11 +28,16 @@
                     <form id="form_{{ release.name }}" method="POST" action="{{ url_for('main.releases') }}">
                       <input type="hidden" name="release-name" value="{{ release.name }}">
                       <input type="hidden" name="release-version" value="{{ release.version }}">
-                      <button id="install_button_{{ release.name }}" type="submit" class="button is-success install-button" name="action" value="apply_release">Install</button>
-                      <button id="uninstall_button_{{ release.name }}" type="submit" class="button is-danger uninstall-button" name="action" value="uninstall_release" data-installed="False">Uninstall</button>
+                      {% if release["is_installed"] == 'False' %}
+                        <button id="install_button_{{ release.name }}" type="submit" class="button is-success install-button" name="action" value="apply_release">Install</button>
+                        <button id="uninstall_button_{{ release.name }}" type="submit" class="button is-danger uninstall-button" name="action" value="uninstall_release" disabled>Uninstall</button>
+                      {% else %}
+                        <button id="install_button_{{ release.name }}" type="submit" class="button is-success install-button" name="action" value="apply_release" disabled>Install</button>
+                        <button id="uninstall_button_{{ release.name }}" type="submit" class="button is-danger uninstall-button" name="action" value="uninstall_release" >Uninstall</button>
+                      {% endif %}
                       <button type="submit" class="button is-success" name="action" value="authorize_users">Authorize Users</button>
+                      <button type="submit" class="button is-success" name="action" value="authorize_group">Authorize Groups</button>
                       <button type="submit" class="button is-danger" name="action" value="delete_release">Delete</button>
-                      <button type="submit" class="button is-info" name="action" value="rollout">Rollout</button>
                     </form>
                   </div>
                 </td>
@@ -45,7 +50,5 @@
   </div>
 {% endblock %}
 {% block scripts %}
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script src="{{ url_for('static', filename='install_uninstall.js') }}"></script>
+
 {% endblock %}

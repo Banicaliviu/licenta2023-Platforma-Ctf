@@ -17,6 +17,8 @@ from ctfplatform.JCTF_backend import (
 from ctfplatform.db_actions import (
     get_jeopardyexercise_where_id,
     get_jeopardyexercises_list,
+    is_chart_installed,
+    update_chartInstallationStatus
 )
 from ctfplatform.utils import append_new_line, format_timestamp
 import datetime
@@ -55,17 +57,21 @@ def update_jctfs_status():
 
 
 def get_relevant_info(releases):
-    relevant_info = []
-    for chart in releases.values():
-        for entry in chart:
-            name = entry["name"]
-            version = entry["version"]
-
-            relevant_info.append(
-                {"name": name, "version": version, "created": format_timestamp()}
-            )
-
-    return relevant_info
+    try:
+        relevant_info = []
+        for chart in releases.values():
+            for entry in chart:
+                name = entry["name"]
+                version = entry["version"]
+                installed = is_chart_installed(entry["name"])
+                relevant_info.append(
+                    {"name": name, "version": version, "created": format_timestamp(), "installed": installed}
+                )
+        
+        return relevant_info
+    except Exception as e:
+        Exception("Error at relevant Info")
+        raise e
 
 
 def verify_image(imageName_tag, digest):
@@ -197,22 +203,34 @@ def delete_release(release_name, release_version):
     return res
 
 
-def rollout_release(release_name):
-    append_new_line("logs.txt", "Rollout release")
-    # Logic to initiate rollout for the specified release
-    # Return True for now
-    return True
+def mark_chart(release_name, state):
+    try: 
+        append_new_line("logs.txt", f"Marking installation phase of release {release_name} to {state}")
+        result = update_chartInstallationStatus(release_name, state)
+        if result == 0:
+            append_new_line('logs.txt', f"Successfully update chart {release_name} state to {state}")
+        else:
+            append_new_line('logs.txt', f"Failed to update chart {release_name} state to {state}")
+    except Exception as e:
+        append_new_line("logs.txt", f"Error marking chart to {state}:{e}")
+
+    
 
 
 def get_helm_releases():
-    append_new_line("logs.txt", "Listing all Helm releases...")
-    releases_json = helm_list_chartmuseum()
-    if releases_json:
-        releases_relinfo = get_relevant_info(releases_json)
-    else:
-        return []
+    try:
+        append_new_line("logs.txt", "Listing all Helm releases...")
+        releases_json = helm_list_chartmuseum()
+        if releases_json:
+            append_new_line("logs.txt", f"{releases_json}")
+            releases_relinfo = get_relevant_info(releases_json)
+        else:
+            return []
 
-    return releases_relinfo
+        return releases_relinfo
+    except Exception as e:
+        append_new_line("logs.txt", f"Error listing chart: {e}")
+        return []
 
 
 # Adds the ctf service of pod to the cluster. The service name template is : ctf-<category>-<title>-service.
@@ -225,10 +243,3 @@ def create_JeopardyExercise_service():
     service = ""
     is_created = False
     return is_created
-
-
-def get_releaseInst():
-    if release_inst:
-        return release_inst
-    else:
-        return None

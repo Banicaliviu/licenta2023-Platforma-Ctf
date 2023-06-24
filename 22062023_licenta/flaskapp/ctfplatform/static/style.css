@@ -4,12 +4,8 @@ body {
     padding: 0;
 }
 
-.notification {
-    margin-bottom: 10px;
-}
-
 .container {
-    max-width: 960px;
+    max-width: 100%;
     margin: 0 auto;
     padding: 20px;
 }
@@ -21,9 +17,8 @@ body {
 }
 
 .notification p {
-    background-color: #333;
-    color: #022e086b;
-    margin: 0;
+    background-color: #232425;
+    color: #f8fcf8bb;
 }
 
 .hero.is-primary {
@@ -32,7 +27,7 @@ body {
 }
 
 .navbar {
-    padding: 10px 20px;
+    padding: 10px 10px;
 }
 
 .navbar-item {
@@ -46,4 +41,11 @@ body {
 
 .navbar-item.is-active {
     background-color: #333;
+}
+
+.box{
+    min-width: 60%;
+    max-width: 90%;
+    display: grid;
+    padding: 5px;
 }
