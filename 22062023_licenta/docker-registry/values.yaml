@@ -16,10 +16,10 @@ image:
   repository: registry
   tag: 2.8.1
   pullPolicy: Always
-  imagePullSecrets:
-    - name: regcred
+  #imagePullSecrets:
+    #- name: regcred
 service:
-  name: registry-service
+  name: docker-registry-service
   type: ClusterIP
   # clusterIP:
   port: 5000
@@ -31,9 +31,15 @@ service:
 ingress:
   enabled: enabled
   path: /
+  #serviceName: registry-service
+  #servicePort: 5000
+  # service:
+  #  name: registry-service
+  #  port:
+  #   number: 5000
   # Used to create an Ingress record.
-  hosts:
-    - registryrepository.192.168.49.2.nip.io
+  #hosts:
+   # - registryrepository.192.168.49.2.nip.io
   annotations: 
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     #cert-manager.io/cluster-issuer: "test-ca-cluster-issuer"

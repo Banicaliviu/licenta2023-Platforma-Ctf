@@ -436,6 +436,13 @@ def helm_push(helm_package_path):
             result = subprocess.run(["helm", "cm-push", helm_package_path, f"{cm_url}"])
             if result.returncode == 0:
                 append_new_line("logs.txt", "Package pushed to ctfplatform-chartmuseum")
+                append_new_line("logs.txt", "Removing package from local storage...")
+                result = subprocess.run(["rm", helm_package_path])
+                if result.returncode == 0:
+                    append_new_line("logs.txt", "Package removed from local storage.")
+                else: 
+                    error_message = result.stderr.strip()
+                    raise Exception(f"Couldn't remove package: {error_message}")
             return result.returncode
     except Exception as e:
         append_new_line("logs.txt", "Package push failed: {}".format(e))
@@ -446,6 +453,14 @@ def helm_install(helm_release_name, helm_release_version):
     try:
         cm_url = kube_interaction_inst.kube_get_chartmuseum()
         if cm_url is not None:
+            result = subprocess.run([
+                "helm",
+                "pull",
+                f"{cm_url}/charts/{helm_release_name}-{helm_release_version}.tgz"
+            ])
+            result.check_returncode()
+            append_new_line("logs.txt", "Installation Success")
+
             result = subprocess.run(
                 [
                     "helm",
@@ -460,6 +475,12 @@ def helm_install(helm_release_name, helm_release_version):
                 error_message = result.stderr.strip()
                 append_new_line("logs.txt", error_message)
                 raise Exception(error_message) 
+            
+            append_new_line("logs.txt", "Removing package from local storage...")
+            result = subprocess.run(["rm", f"{helm_release_name}-{helm_release_version}.tgz"])
+            result.check_returncode()
+            append_new_line("logs.txt", "Package removed from local storage.")
+            return result.returncode
     except Exception as e:
         append_new_line("logs.txt", f"Installation failed: {str(e)}")
         raise e

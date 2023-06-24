@@ -153,7 +153,7 @@ def authorize_users(release_name):
 def apply_release(release_name, release_version):
     try:
         append_new_line(
-            "logs.txt", "Installing release with name: {}".format(release_name)
+            "logs.txt", "Installing release with name: {}-{}".format(release_name, release_version)
         )
 
         res = helm_install(release_name, release_version)
