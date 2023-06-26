@@ -1,7 +1,7 @@
 from ctfplatform.kubernetes_interactions import get_db_connection
 from ctfplatform.utils import append_new_line
 from werkzeug.security import generate_password_hash
-
+from ctfplatform.utils import encrypt_data
 
 ########################USERS & GROUPS tables################
 def user_table(conn, cur):
@@ -23,7 +23,7 @@ def user_table(conn, cur):
         cur.execute(
             "INSERT INTO UserTable (email, password, username, role) "
             "VALUES (%s, %s, %s, %s);",
-            ("admin@gmail.com", hashed_password, "admin", "admin"),
+            ("admin@gmail.com", encrypt_data(hashed_password), "admin", "admin"),
         )
 
         conn.commit()

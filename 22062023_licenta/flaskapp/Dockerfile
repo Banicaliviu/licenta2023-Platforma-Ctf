@@ -11,7 +11,13 @@ RUN \
  apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev linux-headers && \
  apk add --no-cache git
 
+RUN pip install --upgrade pip
+RUN apk add --no-cache g++ make openssl-dev libffi-dev python3-dev 
+RUN apk add --update alpine-sdk 
+
 RUN pip install -r requirements.txt
+RUN pip uninstall psycopg2
+RUN pip install --no-binary :all: psycopg2
 
 RUN apk add --no-cache curl \
     && curl https://get.helm.sh/helm-v3.7.0-linux-amd64.tar.gz -o helm.tar.gz \

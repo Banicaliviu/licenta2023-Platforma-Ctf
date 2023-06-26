@@ -67,7 +67,7 @@ def get_relevant_info(releases):
                 relevant_info.append(
                     {"name": name, "version": version, "created": format_timestamp(), "installed": installed}
                 )
-        
+                append_new_line("logs.txt", f"name:{name}\n state of istallation:{installed}")
         return relevant_info
     except Exception as e:
         Exception("Error at relevant Info")

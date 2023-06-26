@@ -2,7 +2,7 @@ import re
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from ctfplatform.utils import append_new_line
+from ctfplatform.utils import append_new_line, encrypt_data, decrypt_data
 from ctfplatform.kubernetes_interactions import get_db_connection
 from ctfplatform.db_actions import get_userid_where_username, get_groups
 
@@ -30,7 +30,7 @@ def register():
         group = request.form["group"]
 
         _hashed_password = generate_password_hash(password)
-
+        enc_passwd = encrypt_data(_hashed_password)
         try:
             conn = get_db_connection()
             cur = conn.cursor()
@@ -66,7 +66,11 @@ def register():
                 cur.execute(
                     "INSERT INTO usertable (email, password, username, role)"
                     "VALUES (%s, %s, %s, %s)",
-                    (email, _hashed_password, username, role),
+                    (email, enc_passwd, username, role),
+                )
+                dec_data = decrypt_data(enc_passwd)
+                append_new_line(
+                    "logs.txt", f"passwd is: {_hashed_password}\n enc is: {enc_passwd}\n  dec is:{dec_data}"
                 )
                 conn.commit()
                 append_new_line(
@@ -135,9 +139,14 @@ def login():
             account = cur.fetchone()
 
             if account:
-                passwd_hs = account[2]
-                # Adming user with admin password inserted to db. Temporar workaround. Password has to be hashed inside db.
-                if check_password_hash(passwd_hs, password) or password == account[2]:
+                # Temporary workaround for admin user due to previous creation of users table and already created admin account
+                # with hashed password from v1.0
+                #passwd_hs = account[2]
+                
+                passwd_enc = encrypt_data(password)
+                #dai push
+                # Adming user with admin password inserted to db. Temporary workaround. Password has to be encrypted inside db.
+                if decrypt_data(passwd_enc) == password:
                     session["loggedin"] = True
                     session["id"] = int(account[0])
                     session["username"] = account[3]

@@ -28,7 +28,7 @@
                     <form id="form_{{ release.name }}" method="POST" action="{{ url_for('main.releases') }}">
                       <input type="hidden" name="release-name" value="{{ release.name }}">
                       <input type="hidden" name="release-version" value="{{ release.version }}">
-                      {% if release["is_installed"] == 'False' %}
+                      {% if release["installed"] == 'False' %}
                         <button id="install_button_{{ release.name }}" type="submit" class="button is-success install-button" name="action" value="apply_release">Install</button>
                         <button id="uninstall_button_{{ release.name }}" type="submit" class="button is-danger uninstall-button" name="action" value="uninstall_release" disabled>Uninstall</button>
                       {% else %}

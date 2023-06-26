@@ -28,13 +28,6 @@ import os
 import shutil
 from urllib.parse import urlparse
 
-EASY_JCTF_1STARRATED = "basic"
-EASY_JCTF_2STARRATED = "in luck"
-INTERMEDIATE_JCTF_3STARRATED = "a bit tricky"
-ADVANCED_JCTF_4STARRATED = "out of the box"
-ADVANCED_JCTF_5STARRATED = "brilliant people only"
-
-
 def add_JeopardyExercise_to_user(jctf_id, username):
     try:
         user_id = get_userid_where_username(username)
@@ -567,49 +560,57 @@ def add_image_and_release(helm_package_path):
     append_new_line(
                     "logs.txt", f"Retrieving release data'."
     )
-    with tarfile.open(helm_package_path, "r:gz") as tar:
-        chart_files = [member for member in tar.getmembers() if member.isfile()]
-        for chart_file in chart_files:
-            if chart_file.name.endswith("Chart.yaml"):
-                chart_info = tar.extractfile(chart_file).read().decode("utf-8")
-                chart_data = yaml.safe_load(chart_info)
+    try:
+        with tarfile.open(helm_package_path, "r:gz") as tar:
+            chart_files = [member for member in tar.getmembers() if member.isfile()]
+            for chart_file in chart_files:
+                if chart_file.name.endswith("Chart.yaml"):
+                    chart_info = tar.extractfile(chart_file).read().decode("utf-8")
+                    chart_data = yaml.safe_load(chart_info)
 
-                chart_name = chart_data.get("name")
-                chart_version = chart_data.get("version")
-                chart_description = chart_data.get("description")
-                chart_apiVersion = chart_data.get("apiVersion")
-                chart_appVersion = chart_data.get("appVersion")
-                chart_type = chart_data.get("type")
-                ok = ok + 1
-                append_new_line(
-                    "logs.txt", f"{chart_file} data retrieved successfully'."
-                )
-            if chart_file.name.endswith("values.yaml"):
-                values_info = tar.extractfile(chart_file).read().decode("utf-8")
-                values_data = yaml.safe_load(values_info)
-                namespace = values_data.get("namespace", namespace)
-                deployment_info = values_data.get("deployment", {})
-                service_info = values_data.get("service", {})
+                    chart_name = chart_data.get("name")
+                    chart_version = chart_data.get("version")
+                    chart_description = chart_data.get("description")
+                    chart_apiVersion = chart_data.get("apiVersion")
+                    chart_appVersion = chart_data.get("appVersion")
+                    chart_type = chart_data.get("type")
+                    ok = ok + 1
+                    append_new_line(
+                        "logs.txt", f"{chart_file} data retrieved successfully'."
+                    )
+                if chart_file.name.endswith("values.yaml"):
+                    values_info = tar.extractfile(chart_file).read().decode("utf-8")
+                    values_data = yaml.safe_load(values_info)
+                    namespace = values_data.get("namespace", namespace)
+                    deployment_info = values_data.get("deployment", {})
+                    service_info = values_data.get("service", {})
 
-                deployment_name = deployment_info.get("name", deployment_name)
-                imageName = deployment_info.get("imageName", imageName)
-                port = service_info.get("port", port)
-                append_new_line(
-                    "logs.txt", f"All data retrieved successfully'."
-                )
-                ok = ok + 1
-            if ok == 2:
-                release_inst = ReleaseObj(
-                    chart_name,
-                    chart_version,
-                    imageName,
-                    chart_description,
-                    chart_apiVersion,
-                    chart_appVersion,
-                    chart_type,
-                    installed,
-                )
-                append_new_line(
-                    "logs.txt", f"Inserting release data {release_inst.get_name()}, {release_inst.get_image_name()}, {release_inst.is_installed()}'."
-                )
-                insert_release(release_inst)
+                    deployment_name = deployment_info.get("name", deployment_name)
+                    imageName = deployment_info.get("imageName", imageName)
+                    port = service_info.get("port", port)
+                    append_new_line(
+                        "logs.txt", f"All data retrieved successfully'."
+                    )
+                    ok = ok + 1
+                if ok == 2:
+                    release_inst = ReleaseObj(
+                        chart_name,
+                        chart_version,
+                        imageName,
+                        chart_description,
+                        chart_apiVersion,
+                        chart_appVersion,
+                        chart_type,
+                        installed,
+                    )
+                    append_new_line(
+                        "logs.txt", f"Inserting release data {release_inst.get_name()}, {release_inst.get_image_name()}, {release_inst.is_installed()}'."
+                    )
+                    insert_release(release_inst)
+    except Exception as e:
+        exc_type, msg = e.args
+        if exc_type == "warn":
+            pass
+        else:
+            append_new_line("logs.txt", f"{msg}")
+            raise e

@@ -71,7 +71,7 @@ def insert_release(releaseInfo):
         if result:
             conn.close()
             raise Exception(
-                "Cannot insert two releases with same name: {}".format(releaseInfo.get_name()),
+                "warn","Cannot insert two releases with same name: {}".format(releaseInfo.get_name()),
             )
         else:
             cur.execute(

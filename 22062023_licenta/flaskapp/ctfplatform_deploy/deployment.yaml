@@ -18,7 +18,7 @@ spec:
       serviceAccountName: ctfplatformsa
       containers:
       - name: flask
-        image: liviubanica/licenta_flask:2
+        image: liviubanica/licenta_flask:3
         imagePullPolicy: Always
         ports:
           - name: http
