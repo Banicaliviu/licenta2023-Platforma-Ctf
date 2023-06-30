@@ -28,9 +28,10 @@ def register():
         password = request.form["password"]
         role = request.form["role"]
         group = request.form["group"]
+        session_token = None
 
-        _hashed_password = generate_password_hash(password)
-        enc_passwd = encrypt_data(_hashed_password)
+        #_hashed_password = generate_password_hash(password)
+        enc_passwd, session_token = encrypt_data(password)
         try:
             conn = get_db_connection()
             cur = conn.cursor()
@@ -61,16 +62,16 @@ def register():
                 flash("Username must contain only characters and numbers !")
             elif not username or not password or not email:
                 append_new_line("logs.txt", "Not all fields were completed")
-                flash("Please fill out the form !")
+                flash("Please fill out the form!")
             else:
                 cur.execute(
-                    "INSERT INTO usertable (email, password, username, role)"
-                    "VALUES (%s, %s, %s, %s)",
-                    (email, enc_passwd, username, role),
+                    "INSERT INTO usertable (email, password, username, role, session_token)"
+                    "VALUES (%s, %s, %s, %s, %s)",
+                    (email, enc_passwd, username, role, session_token),
                 )
-                dec_data = decrypt_data(enc_passwd)
+                dec_data = decrypt_data(enc_passwd, session_token)
                 append_new_line(
-                    "logs.txt", f"passwd is: {_hashed_password}\n enc is: {enc_passwd}\n  dec is:{dec_data}"
+                    "logs.txt", f"passwd is: {password}\n enc is: {enc_passwd}\n  dec is:{dec_data}"
                 )
                 conn.commit()
                 append_new_line(
@@ -142,11 +143,28 @@ def login():
                 # Temporary workaround for admin user due to previous creation of users table and already created admin account
                 # with hashed password from v1.0
                 #passwd_hs = account[2]
-                
-                passwd_enc = encrypt_data(password)
+                mview = account[2]
+                passwd_enc = bytes(mview)
+                mview = account[5]
+                session_token = bytes(mview)
+                append_new_line(
+                        "logs.txt",
+                        f"Hex : {passwd_enc},{type(passwd_enc)}"
+                        )
+                # passwd_bytes = bytes.fromhex(passwd_hex)
+                # append_new_line(
+                #         "logs.txt",
+                #         f"Bytes: {passwd_bytes}"
+                #         )
+                passwd_dec = decrypt_data(passwd_enc, session_token)
+                append_new_line(
+                        "logs.txt",
+                        f"Decrypted: {passwd_dec}"
+                        )
+                password_str = passwd_dec.decode('ascii')
                 #dai push
                 # Adming user with admin password inserted to db. Temporary workaround. Password has to be encrypted inside db.
-                if decrypt_data(passwd_enc) == password:
+                if password_str == password:
                     session["loggedin"] = True
                     session["id"] = int(account[0])
                     session["username"] = account[3]

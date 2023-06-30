@@ -1,49 +1,55 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="title" id="page-title">
-  Authorize Users
-</h1>
-<div class="box" id="authorize-users-tab">
-  <div class="field">
-    <label class="label">Search User</label>
-    <div class="control">
-      <input class="input" type="text" id="search-user-field" placeholder="Enter username">
+  <h1 class="title" id="page-title">
+    Authorize Users
+  </h1>
+  <div class="box" id="authorize-users-tab">
+    <div class="field">
+      <label class="label">Search User</label>
+      <div class="control">
+        <input class="input" type="text" id="search-user-field" placeholder="Enter username">
+      </div>
     </div>
   </div>
-</div>
   <div class="container">
     <div class="box">
-      <table class="table is-fullwidth">
-        <thead>
-          <tr>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Group</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for user in users %}
-          <tr>
-            <td>{{ user["username"] }}</td>
-            <td>{{ user["email"] }}</td>
-            <td>{{ user["group"] }}</td>
-            <td>
-              <div class="buttons">
-                <form id="form" method="POST" action="{{ url_for('main.authorize_users') }}">
-                  {% if user["is_authorized"] == 'true' %}
-                    <button class="button is-success"  id="authorize_{{ user.username }}" type="submit" disabled>Save</button>
-                    <button class="button is-danger"  id="authorize_{{ user.username }}" type="submit" >Unauthorize</button>
-                  {% else %}
-                    <button class="button is-success"  id="authorize_{{ user.username }}" type="submit" >Save</button>
-                    <button class="button is-danger"  id="authorize_{{ user.username }}" type="submit" disabled>Unauthorize</button>
-                  {% endif %}
-                </form>
-            </div>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      {% if users is none  %}
+        <p>None</p>
+      {% else %}
+        <table class="table is-fullwidth">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Group</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr>
+              <td>{{ user["username"] }}</td>
+              <td>{{ user["email"] }}</td>
+              <td>{{ user["group"] }}</td>
+              <td>
+                <div class="buttons">
+                  <form id="form" method="POST" action="{{ url_for('main.authorize_users', release_name=release_name) }}">
+                    <input type="hidden" name="user-username" value="{{ user.username }}">
+                    {% if user["is_authorized"] == 'True' %}
+                      <button class="button is-success"  id="authorize_{{ user.username }}" type="submit" name="action" value="auth" disabled>Save</button>
+                      <button class="button is-danger"  id="authorize_{{ user.username }}" type="submit" name="action" value="deauth">Unauthorize</button>
+                    {% else %}
+                      <button class="button is-success"  id="authorize_{{ user.username }}" type="submit" name="action" value="auth" >Save</button>
+                      <button class="button is-danger"  id="authorize_{{ user.username }}" type="submit" name="action" value="deauth" disabled>Unauthorize</button>
+                    {% endif %}
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
       <div class="buttons">
         <a class="button is-danger" href="{{ url_for('main.releases') }}">Cancel</a>
       </div>

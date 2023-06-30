@@ -28,7 +28,7 @@ from ctfplatform.JCTF_actions import (
     verify_image,
     mark_chart
 )
-from ctfplatform.main_actions import init, update_profile, new_group
+from ctfplatform.main_actions import init, update_profile, new_group, set_permission_user, get_users
 from werkzeug.utils import secure_filename
 
 main_bp = Blueprint("main", __name__)
@@ -51,6 +51,11 @@ def profile():
         "profile.html", username=username, score=profile["score"], ctfs=profile["jctfs"]
     )
 
+@main_bp.route("/scoreboard")
+def scoreboard():
+    return render_template(
+        "scoreboard.html"
+    )
 
 @main_bp.route("/jeopardy")
 def jeopardy():
@@ -159,10 +164,10 @@ def releases():
 
         if release_name:
             if action == "authorize_users":
-                return redirect(url_for("main.authorize_users"))
+                return redirect(url_for("main.authorize_users", release_name=release_name))
             
-            elif action == "authorize_group":
-                return redirect(url_for("main.authorize_group"))
+            if action == "authorize_group":
+                return redirect(url_for("main.authorize_group", release_name))
             
             elif action == "delete_release":
                 form_release_name = request.form.get("release-name")
@@ -186,11 +191,12 @@ def releases():
                     return render_template("releases.html", releases=releases)
                 else:
                     flash(f"Failed to install release '{release_name}'.", "error")
+                    releases = get_helm_releases()
                     return render_template("releases.html", releases=releases)
 
             elif action == "uninstall_release":
                 result = uninstall_release(release_name, release_version)
-                if result == 0:
+                if result == True:
                     flash(
                         f"Release '{release_name}' uninstalled successfully.", "success"
                     )
@@ -233,22 +239,41 @@ def create_group():
     return render_template("register_group.html")
 
 
-@main_bp.route("/authorize_users", methods=["GET", "POST"])
-def authorize_users():
+@main_bp.route("/authorize_users/<release_name>", methods=["GET", "POST"])
+def authorize_users(release_name):
     if request.method == "POST":
-        # Perform authorization logic here
-        flash("Users authorized.", "success")
-        return redirect(url_for("main.authorize_users"))
+        username = request.form.get("user-username")
+        action = request.form.get("action")
+        append_new_line("logs.txt", f"Changing user's authorization: {username} for {release_name}")
 
-    # Fetch users from the database or any other data source
-    users = [
-        {"email": "user1@example.com", "username": "user1", "group": "Group A"},
-        {"email": "user2@example.com", "username": "user2", "group": "Group B"},
-        {"email": "user3@example.com", "username": "user3", "group": "Group A"},
-        {"email": "user4@example.com", "username": "user4", "group": "Group C"},
-    ]
-
-    return render_template("authorize_users.html", users=users)
+        if action == "auth":
+            res = set_permission_user(username, release_name, "True")
+            users = get_users()
+            if res == 1:
+                flash(f"User's {username} permissions changed for {release_name}.", "success") 
+            else:
+                flash(f"Couldn't authorize user. Internal error.", "error") 
+            if users == []:
+                return render_template("authorize_users.html", users=[], release_name=release_name)
+            return render_template("authorize_users.html", users=users, release_name=release_name)
+        
+        if action == "deauth":
+            res = set_permission_user(username, release_name, "False")
+            users = get_users()
+            if res == 1:
+                flash(f"User's {username} permissions changed for {release_name}.", "success") 
+            else:
+                flash(f"Couldn't authorize group. Internal error.", "error")  
+            if users == []:
+                return render_template("authorize_users.html", users=[], release_name=release_name)
+            return render_template("authorize_users.html", users=users, release_name=release_name)
+        flash(f"Couldn't change permissions: {username} - {release_name}", "error")
+        return redirect(url_for("main.authorize_users", release_name=release_name))
+    else:
+        users = get_users()
+        if users == []:
+            return render_template("authorize_users.html", users=[],release_name=release_name)
+        return render_template("authorize_users.html", users=users, release_name=release_name)
 
 @main_bp.route("/authorize_group", methods=["GET", "POST"])
 def authorize_group():
@@ -259,9 +284,9 @@ def authorize_group():
 
     # Fetch users from the database or any other data source
     groups = [
-        {"name": "Group A", "members": "10"},
-        {"name": "Group B", "members": "11"},
-        {"name": "Group C", "members": "12"}
+        {"name": "Group A", "members": "10", "is_authorized" : "False"},
+        {"name": "Group B", "members": "11", "is_authorized" : "True"},
+        {"name": "Group C", "members": "12", "is_authorized" : "False"},
     ]
 
     return render_template("authorize_group.html", groups=groups)

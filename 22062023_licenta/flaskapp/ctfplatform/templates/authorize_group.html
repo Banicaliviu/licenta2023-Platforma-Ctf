@@ -28,7 +28,7 @@
                 <td>
                 <div class="buttons">
                     <form id="form" method="POST" action="{{ url_for('main.authorize_group') }}">
-                        {% if group["is_authorized"] == 'true' %}
+                        {% if group["is_authorized"] == 'True' %}
                             <button class="button is-success"  id="authorize_{{ group.name }}" type="submit" disabled>Save</button>
                             <button class="button is-danger"  id="authorize_{{ group.name }}" type="submit" >Unauthorize</button>
                         {% else %}

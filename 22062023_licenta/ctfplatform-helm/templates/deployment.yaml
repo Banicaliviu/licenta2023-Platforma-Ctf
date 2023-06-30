@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask
+  labels:
+    app: flask
+  namespace: ctfspace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask
+  template:
+    metadata:
+      labels:
+        app: flask
+    spec:
+      serviceAccountName: ctfplatformsa
+      containers:
+      - name: flask
+        image: liviubanica/licenta_flask:3
+        imagePullPolicy: Always
+        ports:
+          - name: http
+            containerPort: 8080
+        resources:
+          limits:
+            cpu: 1500m
+            memory: 1Gi
+          requests:
+            cpu: 712m
+            memory: 712Mi
+      # imagePullSecrets:
+      # - name: registry-credentials

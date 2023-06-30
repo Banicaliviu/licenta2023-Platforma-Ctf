@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ctfplatformsa
+  namespace: ctfspace
+secrets:
+- name: ctfplatform-secret
+

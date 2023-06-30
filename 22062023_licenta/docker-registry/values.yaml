@@ -20,7 +20,7 @@ image:
     #- name: regcred
 service:
   name: docker-registry-service
-  type: ClusterIP
+  type: NodePort
   # clusterIP:
   port: 5000
   # nodePort:

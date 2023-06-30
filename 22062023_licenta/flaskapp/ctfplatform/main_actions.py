@@ -1,7 +1,14 @@
 from ctfplatform.main_backend import (
     get_juserhistory,
     check_for_same_groupname,
-    add_group,
+    add_group
+)
+from ctfplatform.db_actions import (
+    get_group_usertogroup,
+    get_permission_releasestouser,
+    select_all_from_usertable,
+    insert_releasestousertable,
+    delete_releasestousertable
 )
 from ctfplatform.utils import append_new_line
 from ctfplatform.kubernetes_interactions import kube_interaction_inst
@@ -30,3 +37,45 @@ def new_group(groupname):
     except Exception as e:
         append_new_line("logs.txt", f"Error creating new group: {e}")
         return False
+
+def set_permission_user(username, releasename, permission):
+    try:
+        if(permission == "True"):
+            res = insert_releasestousertable(username, releasename)
+            if res == 1: 
+                append_new_line("logs.txt", f"Permission set to {permission} for {username} to {releasename}")
+            return res
+        else:
+            res = delete_releasestousertable(username, releasename)
+            if res == 1:
+                append_new_line("logs.txt", f"Permission set to {permission} for {username} to {releasename}")
+            return res
+    except Exception as e:
+        append_new_line("logs.txt", f"Error retrieving users: {e}")
+        return 0
+
+def get_users():
+    try:
+        users = []
+        res_query = []
+        res_query = select_all_from_usertable()
+        if res_query:
+            for user in res_query: 
+                permission = get_permission_releasestouser(user["username"])
+                group = get_group_usertogroup(user["username"])
+                users.append(
+                    {
+                        "username": user["username"],
+                        "email": user["email"],
+                        "group": group,
+                        "is_authorized": permission,
+                    }
+                )
+        else:
+            append_new_line("logs.txt", f"Failed to get users: {users}")
+            return []   
+        append_new_line("logs.txt", f"Succes: {users}")
+        return users
+    except Exception as e:
+        append_new_line("logs.txt", f"Error retrieving users: {e}")
+        return []

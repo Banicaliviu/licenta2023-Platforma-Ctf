@@ -9,7 +9,7 @@ deployment:
 service:
  name: ctf-web-simplewebch-service
  type: NodePort
- port: 30080
+ port: 31246
  targetPort: 2640
  selector: 
   app: ctf-web-simplewebch-deployment

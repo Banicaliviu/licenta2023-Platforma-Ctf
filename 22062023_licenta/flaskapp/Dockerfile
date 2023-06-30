@@ -19,6 +19,7 @@ RUN pip install -r requirements.txt
 RUN pip uninstall psycopg2
 RUN pip install --no-binary :all: psycopg2
 
+RUN apk add tar
 RUN apk add --no-cache curl \
     && curl https://get.helm.sh/helm-v3.7.0-linux-amd64.tar.gz -o helm.tar.gz \
     && tar -zxvf helm.tar.gz \
@@ -34,5 +35,5 @@ ENV POSTGRES_DB=ctfplatformdb \
     HELM_EXPERIMENTAL_OCI=1 \
     HELM_TLS_VERIFY=0
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8089", "app:app"]
 #CMD [ "python", "-m" , "flask", "run", "--host=0.0.0.0:8080"]

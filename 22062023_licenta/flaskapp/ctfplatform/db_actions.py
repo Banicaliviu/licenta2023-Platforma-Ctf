@@ -23,7 +23,32 @@ def insert_group(groupname):
             "Cannot insert group to database: {}".format(groupname),
         )
         raise e
+    
+def insert_releasestousertable(username, releasename):
+    try: 
+        conn = get_db_connection()
+        cur = conn.cursor()
 
+        id_release = get_releaseid_where_releasename(releasename)
+        id_user = get_userid_where_username(username)
+
+        query = """
+            INSERT INTO releasestousertable (id_release, id_user)
+            VALUES (%s, %s)
+         """
+        
+        cur.execute(query, (id_release, id_user,))
+        conn.commit()
+
+        if cur.rowcount > 0:
+            append_new_line("logs.txt", f"Permission granted for {username} to {releasename}")
+            return 1
+        else:
+            append_new_line("logs.txt", f"Couldn't grant permission for {username} to {releasename}")
+            return 0
+    except Exception as e:
+        append_new_line("logs.txt", "Error inserting release to user entry into db: {}".format(e))
+        raise e
 
 ###############RELEASES
 
@@ -36,9 +61,15 @@ def is_chart_installed(releaseName):
             (releaseName,),
         )
         result = cur.fetchone()
-        append_new_line('logs.txt', f"Is chart installed? {result}")
-        return result
-    except Exception as e: 
+        if result is not None:
+            if "True" in result: 
+                return "True"
+            elif "False" in result:
+                return "False"
+        else:
+            append_new_line('logs.txt', "Something happend while checking status of release.")
+        return "False"
+    except Exception as e:
         Exception("Error while verifying whether release is installed")
         raise e
     
@@ -51,10 +82,16 @@ def update_chartInstallationStatus(releaseName, newState):
             SET installed = %s WHERE name = %s""",
             (newState, releaseName,),
         )
-        result = cur.fetchone()
-        return result
+        
+        if cur.rowcount > 0:
+            conn.commit()
+            return True
+        else:
+            raise Exception(f"No rows updated for release: {releaseName}")
+            
     except Exception as e:
         Exception(f"Error updating release install state: {e}")
+        append_new_line('logs.txt', f"Error updating release install state: {e}")
         raise e 
     
 def insert_release(releaseInfo):
@@ -252,7 +289,92 @@ def insert_jeopardyuserhistory(juserhistory):
         raise e
 
 
-##########Selects
+#####################Selects
+def get_releaseid_where_releasename(releasename):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        query = """
+            SELECT id FROM releasestable WHERE name=%s
+        """
+        cur.execute(query, (releasename,))
+        res = cur.fetchone()
+        if res[0]:
+            append_new_line("logs.txt", f"Succes getting release info")
+        else:
+            append_new_line("logs.txt", f"Fail to get release info")
+        return res[0]
+    except Exception as e:
+        append_new_line("logs.txt", f"Error getting releaseid with {releasename}: {e}")
+        raise e
+    
+def get_group_usertogroup(username):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        user_id = get_userid_where_username(username)
+        query = """
+            SELECT grouptable.name
+            FROM grouptable
+            JOIN usertogrouptable ON grouptable.id= usertogrouptable.id_group
+            WHERE usertogrouptable.id_user = %s
+        """
+        cur.execute(query, (user_id,))
+        groupname = cur.fetchone()
+
+        if groupname: 
+            append_new_line("logs.txt", "User {} is part of {}".format(username, groupname))
+            return groupname
+        else:
+            append_new_line("logs.txt", "User {} is not part of any group".format(username))
+            return "None"
+    except Exception as e:
+        append_new_line("logs.txt", "Error retrieving group of {}: {}".format(username,e))
+        raise e
+
+def get_permission_releasestouser(username):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        user_id = get_userid_where_username(username)
+        query = """
+            SELECT id_release FROM releasestousertable WHERE id_user=%s
+        """
+        cur.execute(query, (user_id,))
+        release_id = cur.fetchone()
+
+        if release_id: 
+            append_new_line("logs.txt", "User {} is authorized".format(username))
+            return "True"
+        else:
+            append_new_line("logs.txt", "User {} is not authorized".format(username))
+            return "False"
+    except Exception as e:
+        append_new_line("logs.txt", "Error retrieving permission to release {}: {}".format(username,e))
+        raise e
+    
+def select_all_from_usertable():
+    users_list = []
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        role = "normal"
+        cur.execute("SELECT email,username FROM usertable WHERE role=%s", (role,))
+        users_listdb = cur.fetchall()
+        for row in users_listdb:
+            users_list.append(
+                {
+                    "email": row[0],
+                    "username": row[1],
+                }
+            )
+        return users_list
+    except Exception as e:
+        append_new_line("logs.txt", "Error retrieving user history: {}".format(e))
+        raise e
+
 def get_jeopardyhistory_where_userid_list(id):
     userhistory_list = []
     try:
@@ -345,7 +467,7 @@ def get_groups():
         return None
 
 
-###########Updates
+######################Updates
 def update_all_status_to_notRunning():
     try:
         conn = get_db_connection()
@@ -385,3 +507,30 @@ def update_single_pod_status_to_Running(name):
     except Exception as e:
         append_new_line("logs.txt", "Error updating pod status: {}".format(e))
         raise e
+
+#######################DELETES
+def delete_releasestousertable(username, releasename):
+    try: 
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        id_release = get_releaseid_where_releasename(releasename)
+        id_user = get_userid_where_username(username)
+
+        query = """
+            DELETE FROM releasestousertable
+            WHERE id_release = %s AND id_user = %s
+         """
+        
+        cur.execute(query, (id_release, id_user))
+        conn.commit()
+        if conn.commit() is None:
+            append_new_line("logs.txt", f"Permission deleted for {username} to {releasename} ")
+        else:
+            append_new_line("logs.txt", f"Couldn't delete permission for {username} to {releasename} ")
+            return 0
+        return 1
+    except Exception as e:
+        append_new_line("logs.txt", "Error deleting release to user entry from db: {}".format(e))
+        raise e
+    

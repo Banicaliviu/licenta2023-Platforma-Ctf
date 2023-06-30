@@ -17,9 +17,7 @@ spec:
        service:
         name: {{ .Values.service.name }}
         port: 
-         number: 8081
+         number: 8080
       path: /ctfplatform-chartmuseum
       pathType: Prefix
-      
-         
-    #- host: chartmuseum.192.168.49.2.nip.io
+ #- host: chartmuseum.192.168.49.2.nip.io

@@ -1,6 +1,5 @@
 from ctfplatform.kubernetes_interactions import get_db_connection
 from ctfplatform.utils import append_new_line
-from werkzeug.security import generate_password_hash
 from ctfplatform.utils import encrypt_data
 
 ########################USERS & GROUPS tables################
@@ -11,20 +10,23 @@ def user_table(conn, cur):
             "CREATE TABLE usertable ("
             "id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,"
             "email VARCHAR(150) NOT NULL,"
-            "password VARCHAR(150) NOT NULL,"
+            "password bytea NOT NULL,"
             "username VARCHAR(150) NOT NULL,"
             "role VARCHAR(150),"
+            "session_token bytea,"
             "date_added DATE DEFAULT CURRENT_TIMESTAMP"
             ");"
         )
-
         password = "admin"
-        hashed_password = generate_password_hash(password)
+        username = "admin"
+        ciphertext, session_token = encrypt_data(password)
+
         cur.execute(
-            "INSERT INTO UserTable (email, password, username, role) "
-            "VALUES (%s, %s, %s, %s);",
-            ("admin@gmail.com", encrypt_data(hashed_password), "admin", "admin"),
-        )
+                "INSERT INTO usertable (email, password, username, role, session_token) "
+                "VALUES (%s, %s, %s, %s, %s);",
+                ("admin@gmail.com", ciphertext, username, "admin", session_token),
+                )
+            
 
         conn.commit()
     except Exception as e:
@@ -44,7 +46,7 @@ def usertogroup_table(conn, cur):
         )
         conn.commit()
     except Exception as e:
-        append_new_line("logs.txt", "Error jeopardy category table: {}".format(e))
+        append_new_line("logs.txt", "Error user to group table: {}".format(e))
         conn.rollback()
 
 
@@ -58,7 +60,7 @@ def group_table(conn, cur):
         )
         conn.commit()
     except Exception as e:
-        append_new_line("logs.txt", "Error jeopardy category table: {}".format(e))
+        append_new_line("logs.txt", "Error group table: {}".format(e))
         conn.rollback()
 
 
@@ -285,11 +287,18 @@ def create_db():
         )
         result = cur.fetchone()
         if result[0] == 0:
+            # cur.execute("DROP TABLE releasestable  CASCADE;")
+            # conn.commit()
             user_table(conn, cur)
-            append_new_line("logs.txt", "UserTable table successfully created !")
+            append_new_line("logs.txt", "usertable table successfully created !")
         else:
-            append_new_line("logs.txt", "UserTable table already exists!")
+            # cur.execute("DROP TABLE usertable  CASCADE;")
+            # conn.commit()
+            # user_table(conn, cur)
+            #append_new_line("logs.txt", "usertable recreated!")
 
+            append_new_line("logs.txt", "usertable already exists!")
+            
         ################creation of grouptable
         cur.execute(
             "SELECT count(*) FROM information_schema.tables WHERE table_name='grouptable';"

@@ -1,5 +1,5 @@
 <?php
-function connect_db($database, $db_user, $db_password, $host = 'localhost', $die = true) {
+function connect_db($database, $db_user, $db_password, $host = '192.168.49.2', $die = true) {
 	// Returns a MySQL link identifier (handle) on success
 	// Returns false or dies() on error depending on the setting of parameter $die
 	// Parameter $die configures error handling, setting it any non-false value will die() on error

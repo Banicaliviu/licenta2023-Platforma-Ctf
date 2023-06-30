@@ -1,8 +1,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  #annotations:
-    #cert-manager.io/cluster-issuer: test-ca-cluster-issuer
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    #cert-manager.io/cluster-issuer: letsencrypt-production
   name: flask-ingress
   namespace: ctfspace
 spec:
@@ -15,9 +16,9 @@ spec:
         service:
          name: flask-service
          port:
-          number: 8080
-    #- host: flask.192.168.49.2.nip.io
-  # tls:
-  # - hosts:
-  #   - flask.192.168.49.2.nip.io
-  #   secretName: myingress-cert
+          number: 8089
+  - host: ctfplatform.192.168.49.2.nip.io
+  #tls:
+   #- hosts:
+    # - ctfplatform.192.168.49.2.nip.io
+#     secretName: myingress-cert

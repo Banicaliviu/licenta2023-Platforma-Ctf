@@ -6,7 +6,7 @@ RUN apt-get update && \
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get install -qy mysql-server
-RUN apt-get -y install php libapache2-mod-php php-mysql
+RUN apt-get -y install php libapache2-mod-php php-mysql vim
 
 RUN usermod -d /var/lib/mysql/ mysql
 COPY server-files/app/ /var/www/html

@@ -452,27 +452,42 @@ def helm_install(helm_release_name, helm_release_version):
             ])
             result.check_returncode()
             append_new_line("logs.txt", "Installation Success")
-
-            result = subprocess.run(
+            result = subprocess.check_call([
+                    "helm",
+                    "install",
+                    helm_release_name,
+                    f"./{helm_release_name}-{helm_release_version}.tgz",
+                ])
+            if result == 0:
+                append_new_line("logs.txt", "Proceding with installation...")
+            else: 
+                append_new_line("logs.txt", "Cannot proceed with installation reason: FAIL")
+                raise Exception("Cannot proceed with installation reason: FAIL") 
+            
+            subprocess.run(
                 [
                     "helm",
                     "install",
                     helm_release_name,
-                    f"ctfplatform-chartmuseum/{helm_release_name}",
+                    f"./{helm_release_name}-{helm_release_version}.tgz",
                 ]
             )
-            if result.returncode == 0:
-                append_new_line("logs.txt", "Installation Success")
-            else: 
-                error_message = result.stderr.strip()
-                append_new_line("logs.txt", error_message)
-                raise Exception(error_message) 
             
             append_new_line("logs.txt", "Removing package from local storage...")
+            result = subprocess.check_call([
+                    "rm",
+                    f"{helm_release_name}-{helm_release_version}.tgz",
+                ])
+            if result == 0:
+                append_new_line("logs.txt", "Cleaning up...")
+            else: 
+                append_new_line("logs.txt", "Cannot clean up resources reason: FAIL")
+                raise Exception("Cannot clean up resources reason: FAIL")
+            
             result = subprocess.run(["rm", f"{helm_release_name}-{helm_release_version}.tgz"])
-            result.check_returncode()
+            
             append_new_line("logs.txt", "Package removed from local storage.")
-            return result.returncode
+            return 0
     except Exception as e:
         append_new_line("logs.txt", f"Installation failed: {str(e)}")
         raise e
@@ -480,20 +495,16 @@ def helm_install(helm_release_name, helm_release_version):
 
 def helm_uninstall(helm_release_name):
     try:
-        cm_url = kube_interaction_inst.kube_get_chartmuseum()
-        if cm_url is not None:
-            result = subprocess.run(
-                [
-                    "helm",
-                    "uninstall",
-                    helm_release_name,
-                    f"{helm_release_name}",
-                ]
-            )
-            # k delete namespace (ctfspace)
-            if result.returncode == 0:
-                append_new_line("logs.txt", "Release uninstalled successfully")
-            return result.returncode
+        result = subprocess.run(
+            [
+                "helm",
+                "uninstall",
+                helm_release_name,
+            ]
+        )
+        result.check_returncode()
+        append_new_line("logs.txt", "Release uninstalled successfully")
+        return True
     except Exception as e:
         append_new_line(
             "logs.txt", f"Failed to uninstall release {helm_release_name} : {str(e)}"

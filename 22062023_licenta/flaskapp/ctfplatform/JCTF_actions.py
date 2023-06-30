@@ -179,7 +179,7 @@ def uninstall_release(release_name, release_version):
         )
 
         res = helm_uninstall(release_name)
-        if res != 0:
+        if res != True:
             append_new_line(
                 "logs.txt", f"Failed to uninstall release '{release_name}'."
             )
@@ -189,7 +189,7 @@ def uninstall_release(release_name, release_version):
             )
         return res
     except Exception as e:
-        append_new_line("logs.txt", "Error installing helm chart: {}".format(e))
+        append_new_line("logs.txt", "Error uninstalling helm chart: {}".format(e))
 
 
 def delete_release(release_name, release_version):
@@ -207,10 +207,12 @@ def mark_chart(release_name, state):
     try: 
         append_new_line("logs.txt", f"Marking installation phase of release {release_name} to {state}")
         result = update_chartInstallationStatus(release_name, state)
-        if result == 0:
+        if result == True:
             append_new_line('logs.txt', f"Successfully update chart {release_name} state to {state}")
+            return True
         else:
             append_new_line('logs.txt', f"Failed to update chart {release_name} state to {state}")
+            return False
     except Exception as e:
         append_new_line("logs.txt", f"Error marking chart to {state}:{e}")
 
