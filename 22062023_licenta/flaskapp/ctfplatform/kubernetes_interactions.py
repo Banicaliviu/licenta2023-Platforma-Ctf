@@ -82,6 +82,21 @@ class kubernetes_interaction:
             )
             return False
 
+    def kube_create_custom_ns(self, username, jeopardyName):
+        namespace_name = f"ctf-{jeopardyName}-{username}"
+        
+        api_instance = client.CoreV1Api(self.apiClient)
+        new_namespace = client.V1Namespace(metadata=client.V1ObjectMeta(name=namespace_name))
+        
+        try:
+            api_instance.create_namespace(new_namespace)
+            append_new_line("kube-logs.txt", f"Namespace '{namespace_name}' created successfully!")
+            return namespace_name
+        except Exception as e:
+            append_new_line("kube-logs.txt", f"Exception when creating namespace: {e}")
+            raise e
+        
+       
     def kube_list_pods(self):
         apiInstance = client.CoreV1Api(self.apiClient)
         append_new_line("kube-logs.txt", "Listing pods in ctfspace namespace...")

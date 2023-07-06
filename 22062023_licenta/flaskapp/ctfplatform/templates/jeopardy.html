@@ -5,12 +5,42 @@
   <h1 class="title">Jeopardy Exercises</h1>
   <p>List with all available jeopardy-type CTFs.</p>
 
-  <div class="exercise-list">
-    {% for exercise in jeopardy_exercises %}
-          {% include 'jeopardy-model.html' %}
-    {% endfor %}
+  <div class="container">
+    <div class="box">
+      <table class="table is-fullwidth">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% if jeopardy_exercises %}
+          {% for exercise in jeopardy_exercises %}
+            {% if exercise["is_authorized"] == 'True' %}
+              <tr>
+                <td>{{ exercise["name"] }}</td>
+                <td>{{ exercise["description"] }}</td>
+                <td>{{ exercise["status"] }}</td>
+                <td>{{ exercise["score"] }}</td>
+                <td>
+                  <div class="buttons">
+                    <form id="form_{{ exercise.name }}" method="POST" action="{{ url_for('main.jeopardy') }}">
+                      <input type="hidden" name="exercise-id" value="{{ exercise.id }}">
+                      <button type="submit" class="button is-success" name="action" value="start_attempt">Start</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
 
 {% if role == 'admin' %}
   <div class="columns is-centered">

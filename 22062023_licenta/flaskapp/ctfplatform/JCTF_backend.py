@@ -16,6 +16,14 @@ from ctfplatform.db_actions import (
     update_all_status_to_notRunning,
     insert_release,
     insert_kube_manifests,
+    insert_jeopardyexercise,
+    get_jeopardy_id_where_name,
+    get_releaseid_where_releasename,
+    insert_jeopardytorelease,
+    delete_release_where_releaseId_cascade,
+    get_jeopardyId_where_releaseId,
+    delete_jeopardy_where_jeopardyId,
+    get_jeopardyexercise_where_id,
 )
 from ctfplatform.classes import ReleaseObj, ImageObj
 
@@ -419,10 +427,19 @@ def create_service_from_template(service_template_path, name, port):
         append_new_line("logs.txt", f"Error creating service from template: {e}")
         raise e
 
+def create_namespace(username, id_jeopardy):
+    try:
+        exercise_jeopardy = get_jeopardyexercise_where_id(id_jeopardy)
+        nsName = kube_interaction_inst.kube_create_custom_ns(username, exercise_jeopardy["name"])
+        append_new_line('logs.txt', 'namespace created')
+        return nsName
+    except Exception as e:
+        append_new_line("logs.txt", "Error creating namespace: {}".format(e))
+        raise e
+
 ####### Working with helm charts 
 def helm_push(helm_package_path):
     try:
-        add_image_and_release(helm_package_path)
         cm_url = kube_interaction_inst.kube_get_chartmuseum()
         if cm_url is not None:
             result = subprocess.run(["helm", "cm-push", helm_package_path, f"{cm_url}"])
@@ -451,7 +468,7 @@ def helm_install(helm_release_name, helm_release_version):
                 f"{cm_url}/charts/{helm_release_name}-{helm_release_version}.tgz"
             ])
             result.check_returncode()
-            append_new_line("logs.txt", "Installation Success")
+            append_new_line("logs.txt", "Chart pulled successfully")
             result = subprocess.check_call([
                     "helm",
                     "install",
@@ -511,7 +528,40 @@ def helm_uninstall(helm_release_name):
         )
         raise e
 
+def helm_install_custom(nsName, helm_package_path):
+    try:
+        result = subprocess.run(
+            [
+                "helm",
+                "install",
+                nsName,
+                f"./{helm_package_path}",
+            ]
+        )
+        result.check_returncode()
+        append_new_line("logs.txt", f"Installation success: {helm_package_path}")
+        return True
+    except Exception as e:
+        append_new_line("logs.txt", f"Installation failed: {str(e)}")
+        raise e
 
+def helm_rm_custom(helm_package_path):
+    try:
+        append_new_line("logs.txt", "Removing package from local storage...")
+
+        result = subprocess.run(
+            [
+               "rm",
+                f"./{helm_package_path}",
+            ]
+        )
+        result.check_returncode()
+        append_new_line("logs.txt", f"Cleaning up success: {helm_package_path}")
+        return True
+    except Exception as e:
+        append_new_line("logs.txt", f"Cleaning up failed: {str(e)}")
+        raise e
+    
 def helm_list_chartmuseum():
     try:
         cm_url = kube_interaction_inst.kube_get_chartmuseum()
@@ -553,8 +603,43 @@ def helm_delete(release_name, version):
         )
         return 1
 
+def helm_pull(releaseName, releaseVersion):
+    try:
+        cm_url = kube_interaction_inst.kube_get_chartmuseum()
+        if cm_url is not None:
+            result = subprocess.run([
+                "helm",
+                "pull",
+                f"{cm_url}/charts/{releaseName}-{releaseVersion}.tgz"
+            ])
+            result.check_returncode()
+            append_new_line("logs.txt", "Chart pulled successfully")
+            return True
+    except Exception as e:
+        append_new_line("logs.txt", f"Error pulling release {e}")
+        raise e
+    
+def delete_entries(releaseName):
+    try: 
+        id_release = get_releaseid_where_releasename(releaseName)
+        id_jeopardy = get_jeopardyId_where_releaseId(id_release)
+        if id_release and id_jeopardy:
+            res = delete_release_where_releaseId_cascade(id_release)
+            if res == 0:
+                return 1
+            
+            res = delete_jeopardy_where_jeopardyId(id_jeopardy)
+            if res == 0:
+                return 1
+        return 0
+    except Exception as e:
+        append_new_line('logs.txt', f'Error: {e}')
+        return 1
 
-def add_image_and_release(helm_package_path):
+def get_node_ip():
+    return kube_interaction_inst.kube_get_node_ip()
+
+def parse_release(helm_package_path):
     deployment_name = None
     port = None
     namespace = None
@@ -613,11 +698,11 @@ def add_image_and_release(helm_package_path):
                         chart_appVersion,
                         chart_type,
                         installed,
+                        port,
+                        namespace
                     )
-                    append_new_line(
-                        "logs.txt", f"Inserting release data {release_inst.get_name()}, {release_inst.get_image_name()}, {release_inst.is_installed()}'."
-                    )
-                    insert_release(release_inst)
+                    
+                    return release_inst
     except Exception as e:
         exc_type, msg = e.args
         if exc_type == "warn":
@@ -625,3 +710,84 @@ def add_image_and_release(helm_package_path):
         else:
             append_new_line("logs.txt", f"{msg}")
             raise e
+        
+def customize_release(pkg_path, releaseName, custom_port, ns_name):
+    values_file_path = "values.yaml"
+    new_pkg_path = f"{ns_name}.tgz"
+
+    with tarfile.open(pkg_path, "r:gz") as tar:
+        # Extract all files and folders from the package
+        tar.extractall()
+
+    # Update values.yaml
+    values_yaml_path = os.path.join(releaseName, "values.yaml")
+    with open(values_yaml_path, "r") as values_file:
+        values_data = yaml.safe_load(values_file)
+
+    values_data["namespace"] = ns_name
+
+    deployment_info = values_data.get("deployment", {})
+    deployment_info["name"] = f"{ns_name}-deployment"
+
+    service_info = values_data.get("service", {})
+    service_info["name"] = f"{ns_name}-service"
+    service_info["port"] = custom_port
+    service_info["selector"]["app"] = f"{ns_name}-deployment"
+
+    values_data["deployment"] = deployment_info
+    values_data["service"] = service_info
+
+    with open(values_yaml_path, "w") as values_file:
+        yaml.dump(values_data, values_file)
+    
+    chart_yaml_path = os.path.join(releaseName, "Chart.yaml")
+    with open(chart_yaml_path, "r") as chart_file:
+        chart_data = yaml.safe_load(chart_file)
+
+    chart_data["namespace"] = ns_name
+
+    with open(chart_yaml_path, "w") as chart_file:
+        yaml.dump(chart_data, chart_file)
+    # Create a new .tgz package with the updated values.yaml and other files
+
+    with tarfile.open(new_pkg_path, "w:gz") as tar:
+        tar.add(releaseName, arcname=os.path.basename(releaseName))
+
+
+    # Remove the extracted files and folders
+    shutil.rmtree(releaseName)
+
+    return new_pkg_path
+
+def add_release(releaseInst):
+    try:
+        append_new_line(
+            "logs.txt", f"Inserting release data {releaseInst.get_name()}, {releaseInst.get_image_name()}, {releaseInst.is_installed()}'."
+        )
+        res = insert_release(releaseInst)
+        append_new_line(
+            "logs.txt", f"Release inserted successfully"
+        )
+        return res
+    except Exception as e:
+        raise e
+    
+def add_Jeopardy_exercise(name, flag, score, status, releaseInst):
+    node_ip = kube_interaction_inst.kube_get_node_ip()
+    port = releaseInst.get_port()
+    fullUrl = f"{node_ip}:{port}"
+
+    description = releaseInst.get_description()
+    namespace = releaseInst.get_namespace()
+    res = insert_jeopardyexercise(name, flag, score, status, fullUrl, description, namespace)
+    return res
+
+def add_Jeopardytorelease(ctfName, releaseName):
+    try:
+        id_jeopardy = get_jeopardy_id_where_name(ctfName)
+        id_release = get_releaseid_where_releasename(releaseName)
+        insert_jeopardytorelease(id_jeopardy, id_release, ctfName, releaseName)
+        return True
+    except Exception as e:
+        append_new_line('logs.txt', f'Error: {e}')
+        return False

@@ -32,6 +32,8 @@ class ReleaseObj:
         appVersion,
         type,
         installed,
+        port,
+        namespace,
     ):
         self.name = name
         self.version = version
@@ -41,6 +43,8 @@ class ReleaseObj:
         self.appVersion = appVersion
         self.type = type
         self.installed = installed
+        self.port = port
+        self.namespace = namespace
 
     def get_name(self):
         return self.name
@@ -65,7 +69,18 @@ class ReleaseObj:
 
     def is_installed(self):
         return self.installed
-
+    
+    def get_port(self):
+        return self.port
+    
+    def get_namespace(self):
+        return self.namespace
+    
+    def set_port(self, port):
+        self.port = port
+    
+    def set_ns(self, nsName):
+        self.namespace = nsName
 
 class ImageObj:
     def __init__(self):

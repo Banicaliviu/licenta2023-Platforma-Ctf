@@ -1,6 +1,32 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="title">
-    Scoreboard
-  </h1>
+<div class="container">
+  <h1 class="title">Scoreboard</h1>
+
+  <div class="container">
+    <div class="box">
+      <table class="table is-fullwidth">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Exercise</th>
+            <th>Score</th>
+            <th>SolvedAt</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% if scoreboard %}
+          {% for row in scoreboard %}
+              <tr>
+                <td>{{ row["user_name"] }}</td>
+                <td>{{ row["exercise_name"] }}</td>
+                <td>{{ row["score"] }}</td>
+                <td>{{ row["solvedAt"] }}</td>
+              </tr>
+          {% endfor %}
+        {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 {% endblock %}

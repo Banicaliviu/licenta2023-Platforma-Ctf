@@ -26,7 +26,10 @@ from ctfplatform.JCTF_actions import (
     uninstall_release,
     get_jctf_id,
     verify_image,
-    mark_chart
+    mark_chart,
+    create_env,
+    update_scoreboard,
+    get_scoreboard,
 )
 from ctfplatform.main_actions import init, update_profile, new_group, set_permission_user, get_users
 from werkzeug.utils import secure_filename
@@ -53,13 +56,31 @@ def profile():
 
 @main_bp.route("/scoreboard")
 def scoreboard():
+    scoreboardDict = get_scoreboard()
     return render_template(
-        "scoreboard.html"
+        "scoreboard.html", scoreboard=scoreboardDict
     )
 
-@main_bp.route("/jeopardy")
+@main_bp.route("/jeopardy", methods=["GET", "POST"])
 def jeopardy():
-    exercises = get_jctf_list()
+    if request.method == "POST":
+        action = request.form["action"]
+        if action == "start_attempt":
+            exercise_id = request.form["exercise-id"]
+            exercises = get_jctf_list(session["role"], session["username"])
+            res = create_env(session["username"], exercise_id)
+            if res == True: 
+                return redirect(url_for("main.play_jeopardy", id=exercise_id))
+            else:
+                flash("Cannot create safe environment", "error")
+                exercises = get_jctf_list(session["role"], session["username"])
+                return render_template(
+                    "jeopardy.html", role=session["role"], jeopardy_exercises=exercises
+                )
+
+    exercises = get_jctf_list(session["role"], session["username"])
+    
+    
     return render_template(
         "jeopardy.html", role=session["role"], jeopardy_exercises=exercises
     )
@@ -68,15 +89,18 @@ def jeopardy():
 @main_bp.route("/jeopardy/<int:id>/play", methods=["GET", "POST"])
 def play_jeopardy(id):
     exercise = []
-    exercise = get_jctf_id(id=id)
+    exerciseDict = get_jctf_id(session["username"], id)
+    exercise = exerciseDict[0]
 
     if request.method == "POST":
         flag = request.form["flag"]
         append_new_line("logs.txt", "Flag submited is {}".format(flag))
         if flag == exercise["flag"]:
             flash("Flag is correct", "success")
-            append_new_line("logs.txt", "Updating profile...")
-            update_userhistory(exercise["id"], session["username"])
+            append_new_line("logs.txt", "Updating scoreboard...")
+            res = update_scoreboard(exercise["name"], exercise["score"], session["username"])
+            if res == 1:
+                append_new_line("logs.txt", "Scoreboard updated")
         else:
             flash("Flag is incorrect", "error")
         return render_template(
@@ -84,12 +108,16 @@ def play_jeopardy(id):
             jeopardyName=exercise["name"],
             jeopardyDescription=exercise["description"],
             jeopardyStatus=exercise["status"],
+            jeopardyScore=exercise["score"],
+            jeopardyURL=exercise["fullUrl"],
         )
     return render_template(
         "play_jeopardy.html",
         jeopardyName=exercise["name"],
         jeopardyDescription=exercise["description"],
         jeopardyStatus=exercise["status"],
+        jeopardyScore=exercise["score"],
+        jeopardyURL=exercise["fullUrl"],
     )
 
 
@@ -133,10 +161,7 @@ def add_jeopardy_exercise_helm_chart():
         uploaded_file = request.files["helm-package"]
         flag = request.form.get("flag")
         score = request.form.get("score")
-        # To do:
-        # install the chart too
-        # insert the neccessaries to db
-        # this way you can update the button
+        
         if uploaded_file and allowed_file(uploaded_file.filename):
             filename = secure_filename(uploaded_file.filename)
             file_path = os.path.join(UPLOAD_FOLDER, filename)
@@ -148,7 +173,7 @@ def add_jeopardy_exercise_helm_chart():
             create_JeopardyExercise_helmchart(ctf_name, flag, score, file_path)
             flash("CTF created successfully")
         else:
-            flash("Invalid file. Please provide a valid .tgz Helm package.", "error")
+            flash("Invalid file. Please provide a valid .tgz or tar.gz Helm package.", "error")
 
         return render_template("add_jeopardy_via_helm_chart.html")
 

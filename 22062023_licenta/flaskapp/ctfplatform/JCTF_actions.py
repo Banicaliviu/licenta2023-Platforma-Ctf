@@ -11,6 +11,17 @@ from ctfplatform.JCTF_backend import (
     add_image,
     is_image_in_repository,
     get_image_digest,
+    add_Jeopardy_exercise,
+    parse_release,
+    add_release,
+    add_Jeopardytorelease,
+    delete_entries,
+    create_namespace, 
+    helm_pull,
+    customize_release,
+    helm_install_custom,
+    helm_rm_custom,
+    get_node_ip,
     # add_kaniko_context_to_template,
     # start_kaniko
 )
@@ -18,7 +29,15 @@ from ctfplatform.db_actions import (
     get_jeopardyexercise_where_id,
     get_jeopardyexercises_list,
     is_chart_installed,
-    update_chartInstallationStatus
+    update_chartInstallationStatus,
+    list_permissions_for,
+    set_status,
+    get_release_where_jeopardyid,
+    get_connections,
+    add_connection,
+    get_connection_conUrl_where_usernameidJeopardy,
+    insert_solution,
+    select_all_scoreboard,
 )
 from ctfplatform.utils import append_new_line, format_timestamp
 import datetime
@@ -34,12 +53,111 @@ def init():
     return 1
 
 
-def get_jctf_list():
-    return get_jeopardyexercises_list()
+def get_jctf_list(role, username):
+    jeopardyexercises_list = get_jeopardyexercises_list()
+    if jeopardyexercises_list:
+        for jeopardyexercise in jeopardyexercises_list:
+            res = set_status(jeopardyexercise)
+            if res != False:
+                jeopardyexercise["status"] = res
+        if (role == "admin"):
+            for exercise in jeopardyexercises_list:
+                exercise["is_authorized"] = "True"
+            return jeopardyexercises_list
+        else:
+            perm_list = list_permissions_for(username)
+            for exercise in jeopardyexercises_list:
+                for perm_id in perm_list:
+                    if exercise["id"] == perm_id:
+                        exercise["is_authorized"]="True"
+    else:
+        jeopardyexercises_list = []
+   
+    return jeopardyexercises_list
 
+           
+def create_env(username, id_jeopardy):
+    try:
+        #create custom namespace k create namespace
+        #append_new_line('logs.txt', f'Type: {type(id_jeopardy)}')
+        #nsName = create_namespace(username, id_jeopardy)
+        #get release based of jeopardy
+        releaseDict = get_release_where_jeopardyid(id_jeopardy)
+        releaseDictInst = releaseDict[0]
+        nsName = f"ctf-{username}"
+        #pull release conf files
+        append_new_line('logs.txt', f'Pulling chart...')
+        res = helm_pull(releaseDictInst["name"], releaseDictInst["version"])
+        if res == True:
+            append_new_line("logs.txt", "OK!")
 
-def get_jctf_id(id):
-    return get_jeopardyexercise_where_id(id=id)
+        releaseName = releaseDictInst["name"]
+        releaseVersion = releaseDictInst["version"]
+
+        pkg_path = f"./{releaseName}-{releaseVersion}.tgz"
+        releaseObj = parse_release(pkg_path)
+        #add custom namespace and + count + 1 at port checking usertojeopardytable
+
+        count = get_connections()
+        if count > 0:
+            append_new_line('logs.txt', f"Number of connections is {count} ")
+            init_port = releaseObj.get_port()
+            custom_port = init_port + count + 11
+            node_ip = get_node_ip()
+            conUrl = f"{node_ip}:{custom_port}"
+            add_connection(username, id_jeopardy, conUrl)
+            new_pkg = customize_release(pkg_path, releaseName, custom_port, nsName)
+            if new_pkg:
+                #install release
+                helm_install_custom(nsName ,new_pkg)
+                #rm package from local storage
+                helm_rm_custom(new_pkg)
+                
+                return True
+        else:
+            append_new_line('logs.txt', f"Initiating first connection...")
+            init_port = releaseObj.get_port()
+            custom_port = init_port + 10
+            node_ip = get_node_ip()
+            conUrl = f"{node_ip}:{custom_port}"
+            add_connection(username, id_jeopardy, conUrl)
+            append_new_line('logs.txt', f"Connection string is: {conUrl}")
+            new_pkg = customize_release(pkg_path, releaseName, custom_port, nsName)
+            if new_pkg:
+                #install release
+                helm_install_custom(nsName ,new_pkg)
+                #rm package from local storage
+                helm_rm_custom(new_pkg)
+                
+                return True
+        return False
+    except Exception as e:
+        append_new_line('logs.txt', f"Error creating environment: {e}")
+        return False
+
+def update_scoreboard(exerciseName, exerciseScore, username):
+    res = insert_solution(exerciseName, exerciseScore, username)
+    return res
+
+def get_scoreboard():
+    res = select_all_scoreboard()
+    return res
+
+def get_jctf_id(username, id):
+    exerciseDict = get_jeopardyexercise_where_id(id=id)
+    fullUrl = get_connection_conUrl_where_usernameidJeopardy(username, id)
+    newexerciseDict = []
+    newexerciseDict.append(
+        {
+            "name":exerciseDict["name"],
+            "status":exerciseDict["status"],
+            "fullUrl":fullUrl,
+            "description":exerciseDict["description"],
+            "score":exerciseDict["score"],
+            "flag":exerciseDict["flag"]
+        }
+    )
+    return newexerciseDict
 
 
 def update_userhistory(jctf_id, username):
@@ -126,13 +244,17 @@ def create_JeopardyExercise_dockerfile(
         return False
 
 
-def create_JeopardyExercise_helmchart(ctf_name, flag, score, helm_package_path):
+def create_JeopardyExercise_helmchart(ctfName, flag, score, helm_package_path):
     try:
         append_new_line(
             "logs.txt",
             "Pushing helm chart with name: {}".format(helm_package_path),
         )
-
+        releaseInst = parse_release(helm_package_path)
+        releaseName = releaseInst.get_name()
+        add_release(releaseInst)
+        add_Jeopardy_exercise(ctfName, flag, score, "Not running", releaseInst)
+        add_Jeopardytorelease(ctfName, releaseName)
         res = helm_push(helm_package_path)
         if res != 0:
             append_new_line(
@@ -196,10 +318,18 @@ def delete_release(release_name, release_version):
     append_new_line("logs.txt", f"Deleting release '{release_name}'...")
 
     res = helm_delete(release_name, release_version)
+    
     if res != 0:
         append_new_line("logs.txt", f"Failed to delete release '{release_name}'.")
     else:
         append_new_line("logs.txt", f"Release '{release_name}' has been deleted.")
+
+    res = delete_entries(release_name)
+
+    if res != 0:
+        append_new_line("logs.txt", f"Failed to delete entries of '{release_name}'.")
+    else:
+        append_new_line("logs.txt", f"All entries of '{release_name}' has been deleted.")
     return res
 
 
